@@ -67,7 +67,7 @@ public class SjoerdsGomokuPlayer {
     }
 
     private static Move generateMove(Board board) {
-        return rnd.ints(0, 257)
+        return rnd.ints(0, 256)
                 .mapToObj(Move::fromFieldIdx)
                 .filter(board::validMove)
                 .findAny()
