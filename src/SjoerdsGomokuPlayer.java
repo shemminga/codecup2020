@@ -11,7 +11,7 @@ public class SjoerdsGomokuPlayer {
     private final IO io;
 
     public static void main(String[] args) throws IOException {
-        final DbgPrinter dbgPrinter = new DbgPrinter(System.err);
+        final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME);
 
         @SuppressWarnings("NumericOverflow")
         final long seed = 8682522807148012L * 1181783497276652981L * System.nanoTime();
@@ -30,7 +30,6 @@ public class SjoerdsGomokuPlayer {
         this.dbgPrinter = dbgPrinter;
     }
 
-    @SuppressWarnings("InfiniteLoopStatement")
     private void play() throws IOException {
         final Board board = new Board();
 
@@ -43,7 +42,7 @@ public class SjoerdsGomokuPlayer {
                 io.outputMove(move);
             }
         } else {
-            board.apply(firstMove);
+            applyMove(board, firstMove);
 
             for (int i = 0; i < 2; i++) {
                 Move move = io.readMove();
@@ -62,10 +61,15 @@ public class SjoerdsGomokuPlayer {
 
         while (true) {
             Move move = io.readMove();
+            if (move == Move.QUIT) {
+                dbgPrinter.log("Exit by command");
+                return;
+            }
+
             applyMove(board, move);
 
             final Move myMove = generateMove(board);
-            board.apply(myMove);
+            applyMove(board, myMove);
             io.outputMove(myMove);
         }
     }
@@ -162,8 +166,7 @@ public class SjoerdsGomokuPlayer {
             if (fieldIdx == 276) {
                 // = "Qu", first letters of Quit
                 dbgPrinter.printMove("IM", moveStr, Move.QUIT);
-                dbgPrinter.log("Exit by command");
-                System.exit(0);
+                return Move.QUIT;
             }
 
             final Move move = moveConverter.toMove(fieldIdx);
@@ -178,8 +181,7 @@ public class SjoerdsGomokuPlayer {
             do {
                 val = in.read();
                 if (val < 0) {
-                    // End of game
-                    System.exit(0);
+                    throw new IOException("Unexpected end of input");
                 }
             } while (val == 32 || val == 9 || val == 10 || val == 13); // Whitespace
 
@@ -275,9 +277,13 @@ public class SjoerdsGomokuPlayer {
 
     private static class DbgPrinter {
         private final PrintStream err;
+        private final long startUpTime;
 
-        private DbgPrinter(final PrintStream err) {
+        private DbgPrinter(final PrintStream err, final long startUpTime) {
             this.err = err;
+            this.startUpTime = startUpTime;
+
+            log("Started up");
         }
 
         void printBoard(String type, Board board) {
@@ -308,7 +314,7 @@ public class SjoerdsGomokuPlayer {
         }
 
         private void log(String message) {
-            err.println((System.nanoTime() - START_UP_TIME) + " " + message);
+            err.println((System.nanoTime() - startUpTime) + " " + message);
         }
 
         private void separator() {
