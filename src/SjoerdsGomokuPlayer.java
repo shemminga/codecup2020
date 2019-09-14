@@ -7,6 +7,7 @@ public class SjoerdsGomokuPlayer {
     private static final long START_UP_TIME = System.nanoTime();
 
     private final DbgPrinter dbgPrinter;
+    private final MoveGenerator moveGenerator;
     private final Random rnd;
     private final IO io;
 
@@ -19,12 +20,21 @@ public class SjoerdsGomokuPlayer {
 
         final Random rnd = new Random(seed);
         final IO io = new IO(new MoveConverter(dbgPrinter), System.in, System.out, dbgPrinter);
-        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(rnd, io, dbgPrinter);
+
+        MoveGenerator gen = board -> rnd.ints(0, 256)
+                .mapToObj(io.moveConverter::toMove)
+                .filter(board::validMove)
+                .findAny()
+                .orElseThrow();
+
+        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, rnd, io, dbgPrinter);
 
         player.play();
     }
 
-    private SjoerdsGomokuPlayer(final Random rnd, final IO io, final DbgPrinter dbgPrinter) {
+    private SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final Random rnd, final IO io,
+            final DbgPrinter dbgPrinter) {
+        this.moveGenerator = moveGenerator;
         this.rnd = rnd;
         this.io = io;
         this.dbgPrinter = dbgPrinter;
@@ -37,7 +47,7 @@ public class SjoerdsGomokuPlayer {
 
         if (firstMove == Move.START) {
             for (int i = 0; i < 3; i++) {
-                final Move move = generateMove(board);
+                final Move move = moveGenerator.generateMove(board);
                 applyMove(board, move);
                 io.outputMove(move);
             }
@@ -53,7 +63,7 @@ public class SjoerdsGomokuPlayer {
                 board.flip();
                 io.outputMove(Move.SWITCH);
             } else {
-                final Move move = generateMove(board);
+                final Move move = moveGenerator.generateMove(board);
                 applyMove(board, move);
                 io.outputMove(move);
             }
@@ -68,7 +78,7 @@ public class SjoerdsGomokuPlayer {
 
             applyMove(board, move);
 
-            final Move myMove = generateMove(board);
+            final Move myMove = moveGenerator.generateMove(board);
             applyMove(board, myMove);
             io.outputMove(myMove);
         }
@@ -77,14 +87,6 @@ public class SjoerdsGomokuPlayer {
     private void applyMove(Board board, Move move) {
         board.apply(move);
         dbgPrinter.printBoard("GB", board);
-    }
-
-    private Move generateMove(Board board) {
-        return rnd.ints(0, 256)
-                .mapToObj(io.moveConverter::toMove)
-                .filter(board::validMove)
-                .findAny()
-                .orElseThrow();
     }
 
     private static final class MoveConverter {
@@ -324,5 +326,10 @@ public class SjoerdsGomokuPlayer {
         private void flush() {
             err.flush();
         }
+    }
+
+    @FunctionalInterface
+    interface MoveGenerator {
+        Move generateMove(Board board);
     }
 }
