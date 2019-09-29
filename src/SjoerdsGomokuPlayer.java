@@ -4,7 +4,7 @@ import java.io.PrintStream;
 import java.util.Random;
 
 public class SjoerdsGomokuPlayer {
-    private static final long START_UP_TIME = System.nanoTime();
+    static final long START_UP_TIME = System.nanoTime();
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
@@ -14,33 +14,44 @@ public class SjoerdsGomokuPlayer {
     public static void main(String[] args) throws IOException {
         final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME);
 
-        @SuppressWarnings("NumericOverflow")
-        final long seed = 8682522807148012L * 1181783497276652981L * System.nanoTime();
-        dbgPrinter.log("SD " + seed);
+        final Random rnd = makeRandom(dbgPrinter);
+        final IO io = makeIO(dbgPrinter, System.in, System.out);
 
-        final Random rnd = new Random(seed);
-        final IO io = new IO(new MoveConverter(dbgPrinter), System.in, System.out, dbgPrinter);
-
-        MoveGenerator gen = board -> rnd.ints(0, 256)
-                .mapToObj(io.moveConverter::toMove)
-                .filter(board::validMove)
-                .findAny()
-                .orElseThrow();
+        MoveGenerator gen = getMoveGenerator(rnd, io);
 
         final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, rnd, io, dbgPrinter);
 
         player.play();
     }
 
-    private SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final Random rnd, final IO io,
-            final DbgPrinter dbgPrinter) {
+    static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
+        return board -> rnd.ints(0, 256)
+                    .mapToObj(io.moveConverter::toMove)
+                    .filter(board::validMove)
+                    .findAny()
+                    .orElseThrow();
+    }
+
+    static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
+        return new IO(new MoveConverter(dbgPrinter), in, out, dbgPrinter);
+    }
+
+    static Random makeRandom(final DbgPrinter dbgPrinter) {
+        @SuppressWarnings("NumericOverflow")
+        final long seed = 8682522807148012L * 1181783497276652981L * System.nanoTime();
+        dbgPrinter.log("SD " + seed);
+
+        return new Random(seed);
+    }
+
+    SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final Random rnd, final IO io, final DbgPrinter dbgPrinter) {
         this.moveGenerator = moveGenerator;
         this.rnd = rnd;
         this.io = io;
         this.dbgPrinter = dbgPrinter;
     }
 
-    private void play() throws IOException {
+    void play() throws IOException {
         final Board board = new Board();
 
         final Move firstMove = io.readMove();
@@ -89,10 +100,10 @@ public class SjoerdsGomokuPlayer {
         dbgPrinter.printBoard("GB", board);
     }
 
-    private static final class MoveConverter {
+    static final class MoveConverter {
         private final DbgPrinter dbgPrinter;
 
-        private MoveConverter(DbgPrinter dbgPrinter) {
+        MoveConverter(DbgPrinter dbgPrinter) {
             this.dbgPrinter = dbgPrinter;
         }
 
@@ -137,13 +148,13 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    private static final class IO {
+    static final class IO {
         private final MoveConverter moveConverter;
         private final InputStream in;
         private final PrintStream out;
         private final DbgPrinter dbgPrinter;
 
-        private IO(MoveConverter moveConverter, InputStream in, PrintStream out, final DbgPrinter dbgPrinter) {
+        IO(MoveConverter moveConverter, InputStream in, PrintStream out, final DbgPrinter dbgPrinter) {
             this.moveConverter = moveConverter;
             this.in = in;
             this.out = out;
@@ -277,11 +288,11 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    private static class DbgPrinter {
+    static class DbgPrinter {
         private final PrintStream err;
         private final long startUpTime;
 
-        private DbgPrinter(final PrintStream err, final long startUpTime) {
+        DbgPrinter(final PrintStream err, final long startUpTime) {
             this.err = err;
             this.startUpTime = startUpTime;
 
