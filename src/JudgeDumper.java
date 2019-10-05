@@ -2,7 +2,7 @@ import java.io.InputStream;
 import java.util.Scanner;
 
 class JudgeDumper {
-    private char ESC = '\u001b';
+    static char ESC = '\u001b';
 
     JudgeDumper(InputStream player1, InputStream player2) {
         sinkStream(player1, "P1: ");
@@ -14,7 +14,7 @@ class JudgeDumper {
             final Scanner scanner = new Scanner(in);
             while (scanner.hasNext()) {
                 scanner.nextLine();
-                //System.err.println(prefix + scanner.nextLine());
+                System.err.println(prefix + scanner.nextLine());
             }
         });
 
@@ -22,7 +22,7 @@ class JudgeDumper {
         thread.start();
     }
 
-    private void printBoard(JudgeBoard board, final StringBuilder builder) {
+    static void printBoard(JudgeBoard board, final StringBuilder builder) {
         for (int i = 0; i < JudgeBoard.BOARD_SIZE; i++) {
             if (i % 4 == 0) {
                 builder.append(System.lineSeparator());
@@ -50,7 +50,7 @@ class JudgeDumper {
         System.out.println(builder.toString());
     }
 
-    private String stoneToString(final JudgeBoard.Stone cell) {
+    private static String stoneToString(final JudgeBoard.Stone cell) {
         switch (cell) {
         case NONE:
             return ansi(37, 47) + "\u2b24" + ansi(0);
@@ -65,11 +65,11 @@ class JudgeDumper {
         throw new AssertionError();
     }
 
-    private String ansi(int fg, int bg) {
+    private static String ansi(int fg, int bg) {
         return ansi(fg) + ansi(bg);
     }
 
-    private String ansi(int code) {
+    private static String ansi(int code) {
         return ESC + "[" + code + "m";
     }
 

@@ -25,7 +25,7 @@ public class PvP {
 
     private static SjoerdsGomokuPlayer newPlayer(final PlayerPipes pipes) {
         final SjoerdsGomokuPlayer.DbgPrinter dbgPrinter =
-                new SjoerdsGomokuPlayer.DbgPrinter(pipes.err.writeEnd, SjoerdsGomokuPlayer.START_UP_TIME);
+                new SjoerdsGomokuPlayer.DbgPrinter(pipes.err.writeEnd, SjoerdsGomokuPlayer.START_UP_TIME, false);
         final Random random = SjoerdsGomokuPlayer.makeRandom(dbgPrinter);
         final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(dbgPrinter, pipes.in.readEnd, pipes.out.writeEnd);
 

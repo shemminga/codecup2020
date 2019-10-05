@@ -4,7 +4,7 @@ class JudgeBoard {
     static final int BOARD_SIZE = 16;
     boolean isGameEnded = false;
     GameResult gameResult = GameResult.INDETERMINATE;
-    Stone playerToMove = Stone.BLACK;
+    Stone playerToMove = Stone.WHITE;
     int moveNumber = 0;
     private Stone[][] board = new Stone[BOARD_SIZE][BOARD_SIZE];
 
