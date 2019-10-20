@@ -1,53 +1,117 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class GenImmediates {
-    protected static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
+public class GenPatterns {
+    private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
-    protected static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
+    private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
+    private static List<String> longCache;
 
     public static void main(String[] args) {
+        System.out.println("static class Patterns {");
+
+        System.out.println("private static long[] la(long... ls) { return ls; }");
+
+        System.out.println("private static long[] la0(long l) { return la(l, 0, 0, 0); }");
+        System.out.println("private static long[] la1(long l) { return la(0, l, 0, 0); }");
+        System.out.println("private static long[] la2(long l) { return la(0, 0, l, 0); }");
+        System.out.println("private static long[] la3(long l) { return la(0, 0, 0, l); }");
+
+        System.out.println("private static Pattern p(long[] rf, long[] ps, int fi) { return new Pattern(rf, ps, fi); }");
+
+        pattern4();
+
+        System.out.println("}");
+    }
+
+    private static void pattern4() {
         final GenPattern horiz = new GenPattern(1, 5, "Aa", "Ab", "Ac", "Ad", "Ae");
         final GenPattern verti = new GenPattern(5, 1, "Aa", "Ba", "Ca", "Da", "Ea");
         final GenPattern diag1 = new GenPattern(5, 5, "Aa", "Bb", "Cc", "Dd", "Ee");
         final GenPattern diag2 = new GenPattern(5, 5, "Ae", "Bd", "Cc", "Db", "Ea");
 
-        final List<String> strings = Stream.of(horiz, verti, diag1, diag2)
-                .flatMap(GenImmediates::removeOneStone)
-                .flatMap(GenImmediates::shiftRight)
-                .flatMap(GenImmediates::shiftDown)
+        final List<SjoerdsGomokuPlayer.Pattern> patterns = Stream.of(horiz, verti, diag1, diag2)
+                .flatMap(GenPatterns::removeOneStone)
+                .flatMap(GenPatterns::shiftRight)
+                .flatMap(GenPatterns::shiftDown)
                 .map(GenPattern::toPattern)
-                .map(GenImmediates::patternToString)
+                .collect(Collectors.toList());
+
+        makeLongCache(patterns);
+        printLongCache();
+
+        final List<String> strings = patterns.stream()
+                .map(GenPatterns::patternToString)
                 .collect(Collectors.toList());
 
         final List<String> methodCalls = new ArrayList<>();
 
-        System.out.print("final static Pattern[] immediates = new Pattern[" + strings.size() + "];");
+        System.out.println("final static Pattern[] pat4 = new Pattern[" + strings.size() + "];");
 
         int methodCounter = 0;
-        String methodName = "initImmediates" + methodCounter;
+        String methodName = "initPat4" + methodCounter;
         methodCalls.add(methodName);
-        System.out.print("private static void " + methodName + "(){");
+        System.out.println("private static void " + methodName + "(){");
+        System.out.println("var arr = new Pattern[]{");
 
+        boolean first = true;
+        int destPos = 0;
         for (int i = 0; i < strings.size(); i++) {
-            System.out.print("immediates[" + i + "] = " + strings.get(i) + ";");
+            if (!first) System.out.print(",");
+            first = false;
+            System.out.print(strings.get(i));
 
             if (i % 500 == 499) {
                 methodCounter++;
-                methodName = "initImmediates" + methodCounter;
+                methodName = "initPat4" + methodCounter;
                 methodCalls.add(methodName);
-                System.out.print("}private static void " + methodName + "(){");
+                System.out.println("};");
+                System.out.println("System.arraycopy(arr,0,pat4," + destPos + ",arr.length);");
+                System.out.println("}");
+                System.out.println("private static void " + methodName + "(){");
+                System.out.println("var arr = new Pattern[]{");
+                first = true;
+                destPos = i + 1;
             }
         }
 
-        System.out.print("}static{");
-        methodCalls.forEach(mc -> System.out.print(mc + "();"));
-        System.out.print("}");
-        System.out.println();
+        System.out.println("};");
+        System.out.println("System.arraycopy(arr,0,pat4," + destPos + ",arr.length);");
+        System.out.println("}");
+        System.out.println("static{");
+        methodCalls.forEach(mc -> System.out.println(mc + "();"));
+        System.out.println("}");
+    }
+
+    private static void makeLongCache(final List<SjoerdsGomokuPlayer.Pattern> patterns) {
+        GenPatterns.longCache = patterns.stream()
+                .flatMap(p -> Stream.concat(
+                            LongStream.of(p.relevantFields).boxed(),
+                            LongStream.of(p.playerStones).boxed()
+                        ))
+                .map(GenPatterns::longToShortStringUncached)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .filter(e -> {
+                    var uncached = e.getKey().length() * e.getValue();
+                    var cached = 10 + e.getKey().length() + 7 * e.getValue();
+                    return cached < uncached;
+                })
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    private static void printLongCache() {
+        System.out.println("private static long[] lc = new long[]{" + String.join(",", longCache) + "};");
     }
 
     private static Stream<GenPattern> removeOneStone(GenPattern parent) {
@@ -123,38 +187,64 @@ public class GenImmediates {
     private static String patternToString(SjoerdsGomokuPlayer.Pattern pattern) {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("new Pattern(")
-                .append("new long[]{");
-        for (int i = 0; i < 4; i++) {
-            if (i > 0) sb.append(',');
-            sb.append(longToShortString(pattern.relevantFields[i]))
-                    .append('L');
-        }
-        sb.append('}')
-                .append(',');
+        sb.append("p(");
+        appendLongArrayCall(pattern.relevantFields, sb);
+        sb.append(',');
 
-        sb.append("new long[]{");
-        for (int i = 0; i < 4; i++) {
-            if (i > 0) sb.append(',');
-            sb.append(longToShortString(pattern.playerStones[i]))
-                    .append('L');
-        }
-        sb.append('}')
-                .append(',');
+        appendLongArrayCall(pattern.playerStones, sb);
+        sb.append(',');
 
         sb.append(pattern.fieldIdx)
                 .append(')');
         return sb.toString();
     }
 
+    private static void appendLongArrayCall(long[] arr, StringBuilder sb) {
+        int filled = -1;
+        boolean found = false;
+        for (int i = 0; i < 4; i++) {
+            if (arr[i] != 0) {
+                if (found) {
+                    filled = -1;
+                } else {
+                    filled = i;
+                    found = true;
+                }
+            }
+        }
+
+        if (filled >= 0) {
+            sb.append("la")
+                    .append(filled)
+                    .append('(')
+                    .append(longToShortString(arr[filled]))
+                    .append(')');
+            return;
+        }
+
+        sb.append("la(");
+        for (int i = 0; i < 4; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(longToShortString(arr[i]));
+        }
+        sb.append(')');
+    }
+
     private static String longToShortString(long l) {
+        final String s = longToShortStringUncached(l);
+        final int idx = longCache.indexOf(s);
+        return idx >= 0 ? ("lc[" + idx + "]") : s;
+    }
+    private static String longToShortStringUncached(long l) {
+        final String postfix = (l <= Integer.MAX_VALUE && l >= Integer.MIN_VALUE) ? "" : "L";
+
         final String hex = "0x" + Long.toHexString(l);
         final String dec = Long.toString(l);
 
         if (hex.length() < dec.length()) {
-            return hex;
+            return hex + postfix;
         }
-        return dec;
+        return dec + postfix;
     }
 
     private static class GenPattern {
