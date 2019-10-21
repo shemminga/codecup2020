@@ -1,21 +1,44 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class GenPatterns {
+    private static final GenPattern HORIZ = new GenPattern(1, 5, "Aa", "Ab", "Ac", "Ad", "Ae");
+    private static final GenPattern VERTI = new GenPattern(5, 1, "Aa", "Ba", "Ca", "Da", "Ea");
+    private static final GenPattern DIAG_1 = new GenPattern(5, 5, "Aa", "Bb", "Cc", "Dd", "Ee");
+    private static final GenPattern DIAG_2 = new GenPattern(5, 5, "Ae", "Bd", "Cc", "Db", "Ea");
+
     private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
+
     private static List<String> longCache;
 
     public static void main(String[] args) {
+        @SuppressWarnings("unchecked")
+        final List<SjoerdsGomokuPlayer.Pattern>[] patterns = new List[] {
+                genPatterns(1),
+                genPatterns(2),
+                genPatterns(3),
+                genPatterns(4)
+        };
+
+        fillLongCache(patterns);
+
+        printCode(patterns);
+    }
+
+    private static void printCode(final List<SjoerdsGomokuPlayer.Pattern>[] patterns) {
         System.out.println("static class Patterns {");
 
         System.out.println("private static long[] la(long... ls) { return ls; }");
@@ -25,39 +48,50 @@ public class GenPatterns {
         System.out.println("private static long[] la2(long l) { return la(0, 0, l, 0); }");
         System.out.println("private static long[] la3(long l) { return la(0, 0, 0, l); }");
 
-        System.out.println("private static Pattern p(long[] rf, long[] ps, int fi) { return new Pattern(rf, ps, fi); }");
+        System.out.println("private static Pattern p(long[] rf, long[] ps, int... fi) { return new Pattern(rf, ps, fi); }");
 
-        pattern4();
+        printLongCache();
+
+        final List<String> methodCalls = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            final List<String> strings = printPatterns(4 - i, patterns[i]);
+            methodCalls.addAll(strings);
+        }
+
+        System.out.println("static{");
+        methodCalls.forEach(mc -> System.out.println(mc + "();"));
+        System.out.println("}");
 
         System.out.println("}");
     }
 
-    private static void pattern4() {
-        final GenPattern horiz = new GenPattern(1, 5, "Aa", "Ab", "Ac", "Ad", "Ae");
-        final GenPattern verti = new GenPattern(5, 1, "Aa", "Ba", "Ca", "Da", "Ea");
-        final GenPattern diag1 = new GenPattern(5, 5, "Aa", "Bb", "Cc", "Dd", "Ee");
-        final GenPattern diag2 = new GenPattern(5, 5, "Ae", "Bd", "Cc", "Db", "Ea");
+    private static List<SjoerdsGomokuPlayer.Pattern> genPatterns(int nrOfStonesToRemove) {
+        Stream<GenPattern> stream = Stream.of(HORIZ, VERTI, DIAG_1, DIAG_2);
 
-        final List<SjoerdsGomokuPlayer.Pattern> patterns = Stream.of(horiz, verti, diag1, diag2)
-                .flatMap(GenPatterns::removeOneStone)
+        for (int i = 0; i < nrOfStonesToRemove; i++) {
+            stream = stream.flatMap(GenPatterns::removeOneStone);
+        }
+
+        return stream
                 .flatMap(GenPatterns::shiftRight)
                 .flatMap(GenPatterns::shiftDown)
+                .distinct()
                 .map(GenPattern::toPattern)
                 .collect(Collectors.toList());
+    }
 
-        makeLongCache(patterns);
-        printLongCache();
-
+    private static List<String> printPatterns(int n, List<SjoerdsGomokuPlayer.Pattern> patterns) {
         final List<String> strings = patterns.stream()
                 .map(GenPatterns::patternToString)
                 .collect(Collectors.toList());
 
         final List<String> methodCalls = new ArrayList<>();
 
-        System.out.println("final static Pattern[] pat4 = new Pattern[" + strings.size() + "];");
+        System.out.println("final static Pattern[] pat" + n + " = new Pattern[" + strings.size() + "];");
 
         int methodCounter = 0;
-        String methodName = "initPat4" + methodCounter;
+        String methodName = "initPat" + n + "" + methodCounter;
         methodCalls.add(methodName);
         System.out.println("private static void " + methodName + "(){");
         System.out.println("var arr = new Pattern[]{");
@@ -68,13 +102,14 @@ public class GenPatterns {
             if (!first) System.out.print(",");
             first = false;
             System.out.print(strings.get(i));
+            if (i % 20 == 19) System.out.println();
 
             if (i % 500 == 499) {
                 methodCounter++;
-                methodName = "initPat4" + methodCounter;
+                methodName = "initPat" + n + "" + methodCounter;
                 methodCalls.add(methodName);
                 System.out.println("};");
-                System.out.println("System.arraycopy(arr,0,pat4," + destPos + ",arr.length);");
+                System.out.println("System.arraycopy(arr,0,pat" + n + "," + destPos + ",arr.length);");
                 System.out.println("}");
                 System.out.println("private static void " + methodName + "(){");
                 System.out.println("var arr = new Pattern[]{");
@@ -84,22 +119,22 @@ public class GenPatterns {
         }
 
         System.out.println("};");
-        System.out.println("System.arraycopy(arr,0,pat4," + destPos + ",arr.length);");
+        System.out.println("System.arraycopy(arr,0,pat" + n + "," + destPos + ",arr.length);");
         System.out.println("}");
-        System.out.println("static{");
-        methodCalls.forEach(mc -> System.out.println(mc + "();"));
-        System.out.println("}");
+
+        return methodCalls;
     }
 
-    private static void makeLongCache(final List<SjoerdsGomokuPlayer.Pattern> patterns) {
-        GenPatterns.longCache = patterns.stream()
-                .flatMap(p -> Stream.concat(
-                            LongStream.of(p.relevantFields).boxed(),
-                            LongStream.of(p.playerStones).boxed()
-                        ))
+    private static void fillLongCache(final List<SjoerdsGomokuPlayer.Pattern>[] patterns) {
+        GenPatterns.longCache = Arrays.stream(patterns)
+                .flatMap(List::stream)
+                .flatMap(p -> Stream.concat(LongStream.of(p.relevantFields)
+                        .boxed(), LongStream.of(p.playerStones)
+                        .boxed()))
                 .map(GenPatterns::longToShortStringUncached)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                .entrySet().stream()
+                .entrySet()
+                .stream()
                 .filter(e -> {
                     var uncached = e.getKey().length() * e.getValue();
                     var cached = 10 + e.getKey().length() + 7 * e.getValue();
@@ -111,7 +146,17 @@ public class GenPatterns {
     }
 
     private static void printLongCache() {
-        System.out.println("private static long[] lc = new long[]{" + String.join(",", longCache) + "};");
+        System.out.println("private static long[] lc = new long[]{");
+
+        boolean first = true;
+        for (int i = 0; i < longCache.size(); i++) {
+            if (!first) System.out.print(',');
+            if (i % 10 == 9) System.out.println();
+            System.out.print(longCache.get(i));
+            first = false;
+        }
+
+        System.out.println("};");
     }
 
     private static Stream<GenPattern> removeOneStone(GenPattern parent) {
@@ -122,7 +167,9 @@ public class GenPatterns {
                     final String[] array = list.toArray(String[]::new);
 
                     final GenPattern genPattern = new GenPattern(parent.height, parent.width, array);
-                    genPattern.response = skip;
+                    genPattern.response.addAll(parent.response);
+                    genPattern.response.add(skip);
+                    Collections.sort(genPattern.response);
                     return genPattern;
                 });
     }
@@ -134,7 +181,9 @@ public class GenPatterns {
                     .toArray(String[]::new);
 
             final GenPattern child = new GenPattern(gp.height, gp.width + 1, moves);
-            child.response = "" + gp.response.charAt(0) + ((char) (gp.response.charAt(1) + 1));
+            gp.response.forEach(r -> child.response.add("" + r.charAt(0) + ((char) (r.charAt(1) + 1))));
+            Collections.sort(child.response);
+
             return child;
         });
     }
@@ -146,7 +195,9 @@ public class GenPatterns {
                     .toArray(String[]::new);
 
             final GenPattern child = new GenPattern(gp.height + 1, gp.width, moves);
-            child.response = "" + ((char) (gp.response.charAt(0) + 1)) + gp.response.charAt(1);
+            gp.response.forEach(r -> child.response.add("" + ((char) (r.charAt(0) + 1)) + r.charAt(1)));
+            Collections.sort(child.response);
+
             return child;
         });
     }
@@ -164,13 +215,8 @@ public class GenPatterns {
         JudgeDumper.printBoard(judgeBoard, sb);
         String movesBoard = sb.toString();
 
-        if (gp.response == null) {
-            System.out.println(movesBoard);
-            return;
-        }
-
         final JudgeBoard responseJB = new JudgeBoard();
-        responseJB.move(gp.response);
+        responseJB.move(gp.response.get(0));
 
         StringBuilder rsb = new StringBuilder();
         JudgeDumper.printBoard(responseJB, rsb);
@@ -194,8 +240,13 @@ public class GenPatterns {
         appendLongArrayCall(pattern.playerStones, sb);
         sb.append(',');
 
-        sb.append(pattern.fieldIdx)
-                .append(')');
+        boolean first = true;
+        for (int fieldIdx : pattern.fieldIdxs) {
+            if (!first) sb.append(',');
+            sb.append(longToShortStringUncached(fieldIdx));
+            first = false;
+        }
+        sb.append(')');
         return sb.toString();
     }
 
@@ -235,6 +286,7 @@ public class GenPatterns {
         final int idx = longCache.indexOf(s);
         return idx >= 0 ? ("lc[" + idx + "]") : s;
     }
+
     private static String longToShortStringUncached(long l) {
         final String postfix = (l <= Integer.MAX_VALUE && l >= Integer.MIN_VALUE) ? "" : "L";
 
@@ -251,12 +303,28 @@ public class GenPatterns {
         final int height;
         final int width;
         final String[] moves;
-        String response;
+        final List<String> response = new ArrayList<>();
 
         private GenPattern(final int height, final int width, final String... moves) {
             this.height = height;
             this.width = width;
             this.moves = moves;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final GenPattern that = (GenPattern) o;
+            return height == that.height && width == that.width && Arrays.equals(moves, that.moves) &&
+                    response.equals(that.response);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(height, width, response);
+            result = 31 * result + Arrays.hashCode(moves);
+            return result;
         }
 
         private SjoerdsGomokuPlayer.Pattern toPattern() {
@@ -272,10 +340,16 @@ public class GenPatterns {
 
             long[] playerStones = new long[]{board.playerStones[0], board.playerStones[1], board.playerStones[2],
                     board.playerStones[3]};
-            final int fieldIdx = MOVE_CONVERTER.toFieldIdx(this.response.charAt(0), this.response.charAt(1));
-            board.apply(MOVE_CONVERTER.toMove(fieldIdx));
 
-            return new SjoerdsGomokuPlayer.Pattern(board.playerStones, playerStones, fieldIdx);
+            int[] fieldIdxs = this.response.stream()
+                    .mapToInt(r -> MOVE_CONVERTER.toFieldIdx(r.charAt(0), r.charAt(1)))
+                    .toArray();
+
+            IntStream.of(fieldIdxs)
+                    .mapToObj(MOVE_CONVERTER::toMove)
+                    .forEach(board::apply);
+
+            return new SjoerdsGomokuPlayer.Pattern(board.playerStones, playerStones, fieldIdxs);
         }
     }
 }
