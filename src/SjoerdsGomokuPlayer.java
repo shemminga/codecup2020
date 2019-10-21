@@ -151,7 +151,7 @@ public class SjoerdsGomokuPlayer {
             return 0;
         }
 
-        private String toString(final int fieldIdx) {
+        String toString(final int fieldIdx) {
             final int col = fieldIdx % 16;
             final int row = (fieldIdx - col) / 16;
 
