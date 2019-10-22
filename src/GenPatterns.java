@@ -128,7 +128,7 @@ public class GenPatterns {
     private static void fillLongCache(final List<SjoerdsGomokuPlayer.Pattern>[] patterns) {
         GenPatterns.longCache = Arrays.stream(patterns)
                 .flatMap(List::stream)
-                .flatMap(p -> Stream.concat(LongStream.of(p.relevantFields)
+                .flatMap(p -> Stream.concat(LongStream.of(p.emptyFields)
                         .boxed(), LongStream.of(p.playerStones)
                         .boxed()))
                 .map(GenPatterns::longToShortStringUncached)
@@ -167,9 +167,9 @@ public class GenPatterns {
                     final String[] array = list.toArray(String[]::new);
 
                     final GenPattern genPattern = new GenPattern(parent.height, parent.width, array);
-                    genPattern.response.addAll(parent.response);
-                    genPattern.response.add(skip);
-                    Collections.sort(genPattern.response);
+                    genPattern.emptyFields.addAll(parent.emptyFields);
+                    genPattern.emptyFields.add(skip);
+                    Collections.sort(genPattern.emptyFields);
                     return genPattern;
                 });
     }
@@ -181,8 +181,8 @@ public class GenPatterns {
                     .toArray(String[]::new);
 
             final GenPattern child = new GenPattern(gp.height, gp.width + 1, moves);
-            gp.response.forEach(r -> child.response.add("" + r.charAt(0) + ((char) (r.charAt(1) + 1))));
-            Collections.sort(child.response);
+            gp.emptyFields.forEach(r -> child.emptyFields.add("" + r.charAt(0) + ((char) (r.charAt(1) + 1))));
+            Collections.sort(child.emptyFields);
 
             return child;
         });
@@ -195,8 +195,8 @@ public class GenPatterns {
                     .toArray(String[]::new);
 
             final GenPattern child = new GenPattern(gp.height + 1, gp.width, moves);
-            gp.response.forEach(r -> child.response.add("" + ((char) (r.charAt(0) + 1)) + r.charAt(1)));
-            Collections.sort(child.response);
+            gp.emptyFields.forEach(r -> child.emptyFields.add("" + ((char) (r.charAt(0) + 1)) + r.charAt(1)));
+            Collections.sort(child.emptyFields);
 
             return child;
         });
@@ -216,7 +216,7 @@ public class GenPatterns {
         String movesBoard = sb.toString();
 
         final JudgeBoard responseJB = new JudgeBoard();
-        responseJB.move(gp.response.get(0));
+        responseJB.move(gp.emptyFields.get(0));
 
         StringBuilder rsb = new StringBuilder();
         JudgeDumper.printBoard(responseJB, rsb);
@@ -234,7 +234,7 @@ public class GenPatterns {
         StringBuilder sb = new StringBuilder();
 
         sb.append("p(");
-        appendLongArrayCall(pattern.relevantFields, sb);
+        appendLongArrayCall(pattern.emptyFields, sb);
         sb.append(',');
 
         appendLongArrayCall(pattern.playerStones, sb);
@@ -303,7 +303,7 @@ public class GenPatterns {
         final int height;
         final int width;
         final String[] moves;
-        final List<String> response = new ArrayList<>();
+        final List<String> emptyFields = new ArrayList<>();
 
         private GenPattern(final int height, final int width, final String... moves) {
             this.height = height;
@@ -317,12 +317,12 @@ public class GenPatterns {
             if (o == null || getClass() != o.getClass()) return false;
             final GenPattern that = (GenPattern) o;
             return height == that.height && width == that.width && Arrays.equals(moves, that.moves) &&
-                    response.equals(that.response);
+                    emptyFields.equals(that.emptyFields);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(height, width, response);
+            int result = Objects.hash(height, width, emptyFields);
             result = 31 * result + Arrays.hashCode(moves);
             return result;
         }
@@ -334,22 +334,26 @@ public class GenPatterns {
                     .map(move -> MOVE_CONVERTER.toFieldIdx(move.charAt(0), move.charAt(1)))
                     .map(MOVE_CONVERTER::toMove)
                     .forEach(move -> {
-                        board.apply(move);
                         board.playerToMove = SjoerdsGomokuPlayer.Board.PLAYER;
+                        board.apply(move);
                     });
 
             long[] playerStones = new long[]{board.playerStones[0], board.playerStones[1], board.playerStones[2],
                     board.playerStones[3]};
 
-            int[] fieldIdxs = this.response.stream()
+            int[] fieldIdxs = this.emptyFields.stream()
                     .mapToInt(r -> MOVE_CONVERTER.toFieldIdx(r.charAt(0), r.charAt(1)))
                     .toArray();
 
+            SjoerdsGomokuPlayer.Board emptyFieldsBoard = new SjoerdsGomokuPlayer.Board();
             IntStream.of(fieldIdxs)
                     .mapToObj(MOVE_CONVERTER::toMove)
-                    .forEach(board::apply);
+                    .forEach(m -> {
+                        emptyFieldsBoard.playerToMove = SjoerdsGomokuPlayer.Board.PLAYER;
+                        emptyFieldsBoard.apply(m);
+                    });
 
-            return new SjoerdsGomokuPlayer.Pattern(board.playerStones, playerStones, fieldIdxs);
+            return new SjoerdsGomokuPlayer.Pattern(emptyFieldsBoard.playerStones, playerStones, fieldIdxs);
         }
     }
 }
