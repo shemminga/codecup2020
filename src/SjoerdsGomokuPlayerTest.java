@@ -2,7 +2,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 
-public class SjoerdGomokuPlayerTest {
+public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
@@ -35,7 +35,7 @@ public class SjoerdGomokuPlayerTest {
         final SjoerdsGomokuPlayer.Board board = new SjoerdsGomokuPlayer.Board();
 
         Arrays.stream(moves)
-                .map(SjoerdGomokuPlayerTest::toMove)
+                .map(SjoerdsGomokuPlayerTest::toMove)
                 .forEach(board::apply);
 
         return board;
