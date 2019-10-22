@@ -1,10 +1,12 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Random;
 
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
+    protected static final long[] ALL_NIL = new long[4];
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
@@ -26,8 +28,7 @@ public class SjoerdsGomokuPlayer {
 
     static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
         return new CombinedMoveGenerator(io,
-                new WinImmediatePatternMoveGenerator(io.moveConverter),
-                new PreventImmediateLossPatternMoveGenerator(io.moveConverter),
+                new PatternMatchMoveGenerator(io.moveConverter),
                 new MonteCarloMoveGenerator(rnd, io.moveConverter)
         );
     }
@@ -370,6 +371,84 @@ public class SjoerdsGomokuPlayer {
         Move generateMove(Board board);
     }
 
+    static class PatternMatchMoveGenerator implements MoveGenerator {
+        private static final int PLAYER = 0;
+        private static final int OPPONENT = 1;
+        @SuppressWarnings("MismatchedReadAndWriteOfArray")
+        private static final int[] NIL_COUNTS = new int[256];
+
+        private final MoveConverter moveConverter;
+
+        PatternMatchMoveGenerator(final MoveConverter moveConverter) {
+            this.moveConverter = moveConverter;
+        }
+
+        @Override
+        public Move generateMove(final Board board) {
+            final int fieldIdx = generateFieldIdx(board);
+            return fieldIdx < 0 ? null : moveConverter.toMove(fieldIdx);
+        }
+
+        private int generateFieldIdx(final Board board) {
+            final int[][] match4 = match(board, Patterns.pat4);
+            final int[][] match3 = match(board, Patterns.pat3);
+            final int[][] match2 = match(board, Patterns.pat2);
+            final int[][] match1 = match(board, Patterns.pat1);
+
+            final int immediateWin = Arrays.mismatch(match4[PLAYER], NIL_COUNTS);
+            if (immediateWin >= 0) {
+                return immediateWin;
+            }
+
+            final int immediateLoss = Arrays.mismatch(match4[OPPONENT], NIL_COUNTS);
+            if (immediateLoss >= 0) {
+                return immediateLoss;
+            }
+
+            return -1;
+        }
+
+        private int[][] match(final Board board, final Pattern[] patterns) {
+            final int[][] possibleMoves = new int[2][256];
+
+            for (final Pattern p : patterns) {
+                final long[] empties = new long[4];
+                for (int i = 0; i < 4; i++) {
+                    empties[i] = (board.playerStones[i] | board.opponentStones[i]) & p.emptyFields[i];
+                }
+
+                if (!Arrays.equals(empties, ALL_NIL)) {
+                    continue;
+                }
+
+                if (matches(board.playerStones, p)) {
+                    countPossibleMoves(possibleMoves[PLAYER], p);
+                }
+
+                if (matches(board.opponentStones, p)) {
+                    countPossibleMoves(possibleMoves[OPPONENT], p);
+                }
+            }
+
+            return possibleMoves;
+        }
+
+        private void countPossibleMoves(final int[] possibleMove, final Pattern p) {
+            for (int fieldIdx : p.fieldIdxs) {
+                possibleMove[fieldIdx]++;
+            }
+        }
+
+        private boolean matches(final long[] stones, final Pattern p) {
+            final long[] fields = new long[4];
+            for (int i = 0; i < 4; i++) {
+                fields[i] = stones[i] & p.playerStones[i];
+            }
+
+            return Arrays.equals(fields, p.playerStones);
+        }
+    }
+
     static class CombinedMoveGenerator implements MoveGenerator {
         private final IO io;
         private final MoveGenerator[] generators;
@@ -411,65 +490,9 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    static class WinImmediatePatternMoveGenerator implements MoveGenerator {
-        private final MoveConverter moveConverter;
-
-        WinImmediatePatternMoveGenerator(final MoveConverter moveConverter) {
-            this.moveConverter = moveConverter;
-        }
-
-        @Override
-        public Move generateMove(final Board board) {
-            for (final Pattern p : Patterns.pat4) {
-                long[] fields = new long[4];
-
-                for (int i = 0; i < 4; i++) {
-                    fields[i] = board.playerStones[i] & p.playerStones[i];
-                }
-
-                if (fields[0] == p.playerStones[0] && fields[1] == p.playerStones[1] &&
-                        fields[2] == p.playerStones[2] && fields[3] == p.playerStones[3]) {
-                    final Move move = moveConverter.toMove(p.fieldIdxs[0]);
-                    if (board.validMove(move)) {
-                        return move;
-                    }
-                }
-            }
-
-            return null;
-        }
-    }
-
-    static class PreventImmediateLossPatternMoveGenerator implements MoveGenerator {
-        private final MoveConverter moveConverter;
-
-        PreventImmediateLossPatternMoveGenerator(final MoveConverter moveConverter) {
-            this.moveConverter = moveConverter;
-        }
-
-        @Override
-        public Move generateMove(final Board board) {
-            for (final Pattern p : Patterns.pat4) {
-                long[] fields = new long[4];
-
-                for (int i = 0; i < 4; i++) {
-                    fields[i] = board.opponentStones[i] & p.playerStones[i];
-                }
-
-                if (fields[0] == p.playerStones[0] && fields[1] == p.playerStones[1] &&
-                        fields[2] == p.playerStones[2] && fields[3] == p.playerStones[3]) {
-                    final Move move = moveConverter.toMove(p.fieldIdxs[0]);
-                    if (board.validMove(move)) {
-                        return move;
-                    }
-                }
-            }
-
-            return null;
-        }
-    }
-
     //@formatter:off
+    //noinspection
+//*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
@@ -1838,5 +1861,14 @@ initPat15();
 initPat16();
 }
 }
+//*/
+/*
+static class Patterns {
+final static Pattern[] pat4 = new Pattern[0];
+final static Pattern[] pat3 = new Pattern[0];
+final static Pattern[] pat2 = new Pattern[0];
+final static Pattern[] pat1 = new Pattern[0];
+}
+//*/
     //@formatter:on
 }
