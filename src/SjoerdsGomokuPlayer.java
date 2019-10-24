@@ -65,9 +65,8 @@ public class SjoerdsGomokuPlayer {
 
         if (firstMove == Move.START) {
             for (int i = 0; i < 3; i++) {
-                final Move move = moveGenerator.generateMove(board);
-                applyMove(board, move);
-                io.outputMove(move);
+                applyMove(board, Move.OPENING[i]);
+                io.outputMove(Move.OPENING[i]);
             }
         } else {
             applyMove(board, firstMove);
@@ -109,6 +108,10 @@ public class SjoerdsGomokuPlayer {
 
     static final class MoveConverter {
         private final DbgPrinter dbgPrinter;
+
+        MoveConverter() {
+            this(null);
+        }
 
         MoveConverter(DbgPrinter dbgPrinter) {
             this.dbgPrinter = dbgPrinter;
@@ -243,6 +246,11 @@ public class SjoerdsGomokuPlayer {
         private static final Move QUIT = new Move(new long[]{0, 0, 0, 0});
         private static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
 
+        private static final Move[] OPENING = new Move[]{new Move(new long[]{0, 0x100, 0, 0}), // Hh
+                new Move(new long[]{0, 0, 0x80000000000000L, 0}), // Ii
+                new Move(new long[]{0, 0, 0x1000000, 0}) // Kh
+        };
+
         private long[] move;
 
         private Move(final long[] move) {
@@ -320,7 +328,7 @@ public class SjoerdsGomokuPlayer {
     static class DbgPrinter {
         private final PrintStream err;
         private final long startUpTime;
-        private final boolean printBoardAndMoves;
+        boolean printBoardAndMoves;
 
         DbgPrinter(final PrintStream err, final long startUpTime, final boolean printBoardAndMoves) {
             this.err = err;

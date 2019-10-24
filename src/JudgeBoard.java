@@ -56,8 +56,9 @@ class JudgeBoard {
                 boolean hLine = horizontalLine(i, j);
                 boolean vLine = verticalLine(i, j);
                 boolean dLine = diagonalLine(i, j);
+                boolean bLine = diagonalBackLine(i, j);
 
-                if (hLine || vLine || dLine) {
+                if (hLine || vLine || dLine || bLine) {
                     isGameEnded = true;
                     gameResult = board[i][j] == Stone.BLACK ? GameResult.BLACK_WINS : GameResult.WHITE_WINS;
                     return;
@@ -101,6 +102,17 @@ class JudgeBoard {
         if (board[i + 2][j + 2] != board[i][j]) return false;
         if (board[i + 3][j + 3] != board[i][j]) return false;
         if (board[i + 4][j + 4] != board[i][j]) return false;
+        return true;
+    }
+
+    private boolean diagonalBackLine(final int i, final int j) {
+        if(i < 4) return false;
+        if (j >= board[i].length - 5) return false;
+        if (board[i][j] == Stone.NONE) return false;
+        if (board[i - 1][j + 1] != board[i][j]) return false;
+        if (board[i - 2][j + 2] != board[i][j]) return false;
+        if (board[i - 3][j + 3] != board[i][j]) return false;
+        if (board[i - 4][j + 4] != board[i][j]) return false;
         return true;
     }
 

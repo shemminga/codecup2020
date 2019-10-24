@@ -3,8 +3,6 @@ import java.util.Objects;
 import java.util.Random;
 
 public class SjoerdsGomokuPlayerTest {
-    private static char ESC = '\u001b';
-
     private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
@@ -14,6 +12,12 @@ public class SjoerdsGomokuPlayerTest {
             SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO);
 
     public static void main(String[] args) {
+        DBG_PRINTER.printBoardAndMoves = true;
+        DBG_PRINTER.printMove("Opening 1", "Hh", MOVE_CONVERTER.toMove(119));
+        DBG_PRINTER.printMove("Opening 2", "Ii", MOVE_CONVERTER.toMove(136));
+        DBG_PRINTER.printMove("Opening 3", "Kh", MOVE_CONVERTER.toMove(167));
+        DBG_PRINTER.printBoardAndMoves = false;
+
         testMoves();
     }
 
@@ -95,7 +99,6 @@ public class SjoerdsGomokuPlayerTest {
         return board;
     }
 
-
     private static SjoerdsGomokuPlayer.Move toMove(String mv) {
         final int fieldIdx = MOVE_CONVERTER.toFieldIdx(mv.charAt(0), mv.charAt(1));
         return MOVE_CONVERTER.toMove(fieldIdx);
@@ -124,6 +127,7 @@ public class SjoerdsGomokuPlayerTest {
     }
 
     private static String ansi(int code) {
+        final char ESC = '\u001b';
         return ESC + "[" + code + "m";
     }
 }
