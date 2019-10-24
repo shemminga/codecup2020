@@ -13,7 +13,8 @@ import java.util.stream.IntStream;
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
     protected static final long[] ALL_NIL = new long[4];
-    private static final int maxMovesPerPly = 10;
+    private static final int maxMovesPerPly = 5;
+    protected static final int MAX_DEPTH = 6;
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
@@ -34,8 +35,7 @@ public class SjoerdsGomokuPlayer {
     }
 
     static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
-        return new CombinedMoveGenerator(io, new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter),
-                new MonteCarloMoveGenerator(rnd, io.moveConverter));
+        return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter);
     }
 
     static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
@@ -409,22 +409,15 @@ public class SjoerdsGomokuPlayer {
 
         @Override
         public Move generateMove(final Board board) {
-            final int[] fieldIdxAndScore = minimax(board, 2, 1, true, Integer.MAX_VALUE, Integer.MIN_VALUE);
+            final int[] fieldIdxAndScore = minimax(board, MAX_DEPTH, 1, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private void mmLog(int level, boolean isPlayer, String msg) {
-            dbgPrinter.log("| ".repeat(level) + " " + (isPlayer ? "PL" : "OP") + " " + msg);
-        }
-
-        private int[] minimax(Board board, int maxDepth, int level, boolean isPlayer, int min, int max) {
-            mmLog(level, isPlayer, "maxDepth = " + maxDepth + ", min = " + min + ", max = " + max);
-
+        private int[] minimax(Board board, int maxDepth, int level, boolean isPlayer, int alpha, int beta) {
             final int[][] match4 = match(board, Patterns.pat4);
 
             final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
             if (immediateWin >= 0) {
-                mmLog(level, isPlayer, "immediate win: " + immediateWin);
                 return fieldIdxAndScore(immediateWin, isPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE);
             }
 
@@ -434,30 +427,29 @@ public class SjoerdsGomokuPlayer {
 
             if (maxDepth <= 0) {
                 final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
-                mmLog(level, isPlayer, "maxDepth reached, scored: " + score);
                 return new int[]{-1, score};
             }
 
             final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1);
             int[] retval = new int[]{moves.get(0), isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
-            mmLog(level, isPlayer, "Examining " + moves.size() + " moves: " + moves);
             for (int move : moves) {
-                mmLog(level, isPlayer, "Examine move " + move + " " + moveConverter.toString(move) + " (" + moves.indexOf(move) + "/" + moves.size() + ")");
+                moves.indexOf(move);
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
-                final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, min, max);
-                mmLog(level, isPlayer, "Move " + move + " " + idxAndScore[SCORE] + " current best: " + retval[FIELD_IDX] + " score: " + retval[SCORE]);
+                final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, alpha, beta);
 
                 if (isPlayer && idxAndScore[SCORE] > retval[SCORE]) {
-                    mmLog(level, isPlayer, "Maximizing, score is better");
                     retval[FIELD_IDX] = move;
                     retval[SCORE] = idxAndScore[SCORE];
+                    alpha = Math.max(alpha, retval[SCORE]);
                 } else if (!isPlayer && idxAndScore[SCORE] < retval[SCORE]) {
-                    mmLog(level, isPlayer, "Minimizing, score is better");
                     retval[FIELD_IDX] = move;
                     retval[SCORE] = idxAndScore[SCORE];
-                } else {
-                    mmLog(level, isPlayer, "score is worse");
+                    beta = Math.min(beta, retval[SCORE]);
+                }
+
+                if (alpha >= beta) {
+                    break;
                 }
             }
 
@@ -491,10 +483,10 @@ public class SjoerdsGomokuPlayer {
                     .limit(maxMovesPerPly)
                     .collect(Collectors.toList());
 
-            dbgPrinter.log("Top moves: " + collect.stream()
-                    .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
-                            e.getValue()))
-                    .collect(Collectors.joining(", ")));
+            //dbgPrinter.log("Top moves: " + collect.stream()
+            //        .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
+            //                e.getValue()))
+            //        .collect(Collectors.joining(", ")));
 
             if (collect.size() > 0) {
                 return collect.stream().map(Map.Entry::getKey).collect(Collectors.toList());
