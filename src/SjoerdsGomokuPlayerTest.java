@@ -7,32 +7,38 @@ public class SjoerdsGomokuPlayerTest {
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
+    protected static final SjoerdsGomokuPlayer.IO IO = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
+    protected static final SjoerdsGomokuPlayer.MoveGenerator MOVE_GENERATOR =
+            SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO);
 
     public static void main(String[] args) {
         testMoves();
     }
 
     private static void testMoves() {
-        final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
-        final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(new Random(), io);
 
-        //testFinish5(moveGenerator);
-        testFinish4(moveGenerator);
+        testFinish5();
+        testFinish4();
     }
 
-    private static void testFinish5(final SjoerdsGomokuPlayer.MoveGenerator moveGenerator) {
-        testMoveGen("Win horizontal", "Ae", moveGenerator, "Aa", "Ba", "Ab", "Bb", "Ac", "Bc", "Ad", "Bd");
-        testMoveGen("Win diagonal", "Ee", moveGenerator, "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd", "Bd");
-        testMoveGen("Block loss", "Ee", moveGenerator, "Hi", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd");
+    private static void testFinish5() {
+        testMoveGen("Win horizontal", "Ae", "Aa", "Ba", "Ab", "Bb", "Ac", "Bc", "Ad", "Bd");
+        testMoveGen("Win diagonal", "Ee", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd", "Bd");
+        testMoveGen("Block loss", "Ee", "Hi", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd");
     }
 
-    private static void testFinish4(final SjoerdsGomokuPlayer.MoveGenerator moveGenerator) {
-        testMoveGen("Exploit open 3", "Ab", moveGenerator, "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
+    private static void testFinish4() {
+        testMoveGen("Exploit open 3", "Af", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
+        testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
+        testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
+
+        testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+                "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
     }
 
-    private static void testMoveGen(String desc, String expectedMove, SjoerdsGomokuPlayer.MoveGenerator moveGenerator, String... setupMoves) {
+    private static void testMoveGen(String desc, String expectedMove, String... setupMoves) {
         final SjoerdsGomokuPlayer.Board board = newBoard(setupMoves);
-        final SjoerdsGomokuPlayer.Move move = moveGenerator.generateMove(board);
+        final SjoerdsGomokuPlayer.Move move = MOVE_GENERATOR.generateMove(board);
         expect(expectedMove, toString(move), desc);
         System.out.println("Test OK: " + desc);
     }

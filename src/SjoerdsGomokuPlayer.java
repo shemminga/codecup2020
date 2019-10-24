@@ -438,8 +438,8 @@ public class SjoerdsGomokuPlayer {
                 return new int[]{-1, score};
             }
 
-            int[] retval = new int[]{-1, isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
             final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1);
+            int[] retval = new int[]{moves.get(0), isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
             mmLog(level, isPlayer, "Examining " + moves.size() + " moves: " + moves);
             for (int move : moves) {
                 mmLog(level, isPlayer, "Examine move " + move + " " + moveConverter.toString(move) + " (" + moves.indexOf(move) + "/" + moves.size() + ")");
@@ -448,11 +448,11 @@ public class SjoerdsGomokuPlayer {
                 final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, min, max);
                 mmLog(level, isPlayer, "Move " + move + " " + idxAndScore[SCORE] + " current best: " + retval[FIELD_IDX] + " score: " + retval[SCORE]);
 
-                if (isPlayer && idxAndScore[SCORE] >= retval[SCORE]) {
+                if (isPlayer && idxAndScore[SCORE] > retval[SCORE]) {
                     mmLog(level, isPlayer, "Maximizing, score is better");
                     retval[FIELD_IDX] = move;
                     retval[SCORE] = idxAndScore[SCORE];
-                } else if (!isPlayer && idxAndScore[SCORE] <= retval[SCORE]) {
+                } else if (!isPlayer && idxAndScore[SCORE] < retval[SCORE]) {
                     mmLog(level, isPlayer, "Minimizing, score is better");
                     retval[FIELD_IDX] = move;
                     retval[SCORE] = idxAndScore[SCORE];
