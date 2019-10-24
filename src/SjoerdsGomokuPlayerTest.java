@@ -16,19 +16,25 @@ public class SjoerdsGomokuPlayerTest {
         final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
         final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(new Random(), io);
 
-        testFinish5(moveGenerator);
+        //testFinish5(moveGenerator);
+        testFinish4(moveGenerator);
     }
 
     private static void testFinish5(final SjoerdsGomokuPlayer.MoveGenerator moveGenerator) {
-        testMoveGen("Ae", moveGenerator, "Aa", "Ba", "Ab", "Bb", "Ac", "Bc", "Ad", "Bd");
-        testMoveGen("Ee", moveGenerator, "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd", "Bd");
-        testMoveGen("Ee", moveGenerator, "Hi", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd");
+        testMoveGen("Win horizontal", "Ae", moveGenerator, "Aa", "Ba", "Ab", "Bb", "Ac", "Bc", "Ad", "Bd");
+        testMoveGen("Win diagonal", "Ee", moveGenerator, "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd", "Bd");
+        testMoveGen("Block loss", "Ee", moveGenerator, "Hi", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd");
     }
 
-    private static void testMoveGen(String expectedMove, SjoerdsGomokuPlayer.MoveGenerator moveGenerator, String... setupMoves) {
+    private static void testFinish4(final SjoerdsGomokuPlayer.MoveGenerator moveGenerator) {
+        testMoveGen("Exploit open 3", "Ab", moveGenerator, "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
+    }
+
+    private static void testMoveGen(String desc, String expectedMove, SjoerdsGomokuPlayer.MoveGenerator moveGenerator, String... setupMoves) {
         final SjoerdsGomokuPlayer.Board board = newBoard(setupMoves);
         final SjoerdsGomokuPlayer.Move move = moveGenerator.generateMove(board);
-        expect(expectedMove, toString(move));
+        expect(expectedMove, toString(move), desc);
+        System.out.println("Test OK: " + desc);
     }
 
     private static SjoerdsGomokuPlayer.Board newBoard(String... moves) {
@@ -52,9 +58,9 @@ public class SjoerdsGomokuPlayerTest {
         return MOVE_CONVERTER.toString(fieldIdx);
     }
 
-    private static void expect(String expected, String actual) {
+    private static void expect(String expected, String actual, String desc) {
         if (!Objects.equals(expected, actual)) {
-            throw new AssertionError("Got: " + actual + "; expected: " + expected);
+            throw new AssertionError("Test " + desc + " NOK: Got: " + actual + "; expected: " + expected);
         }
     }
 }

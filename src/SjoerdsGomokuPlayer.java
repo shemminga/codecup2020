@@ -2,11 +2,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
     protected static final long[] ALL_NIL = new long[4];
+    private static final int maxMovesPerPly = 10;
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
@@ -27,10 +34,8 @@ public class SjoerdsGomokuPlayer {
     }
 
     static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
-        return new CombinedMoveGenerator(io,
-                new PatternMatchMoveGenerator(io.moveConverter),
-                new MonteCarloMoveGenerator(rnd, io.moveConverter)
-        );
+        return new CombinedMoveGenerator(io, new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter),
+                new MonteCarloMoveGenerator(rnd, io.moveConverter));
     }
 
     static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
@@ -246,11 +251,25 @@ public class SjoerdsGomokuPlayer {
 
     static final class Board {
         static final int PLAYER = 0;
+        @SuppressWarnings("unused")
         static final int OPPONENT = ~0;
 
         int playerToMove = PLAYER;
         long[] playerStones = new long[]{0, 0, 0, 0};
         long[] opponentStones = new long[]{0, 0, 0, 0};
+
+        Board() {
+        }
+
+        private Board(final int playerToMove, final long[] playerStones, final long[] opponentStones) {
+            this.playerToMove = playerToMove;
+            this.playerStones = playerStones;
+            this.opponentStones = opponentStones;
+        }
+
+        Board copy() {
+            return new Board(playerToMove, Arrays.copyOf(playerStones, 4), Arrays.copyOf(opponentStones, 4));
+        }
 
         Board apply(Move move) {
             if (move == Move.SWITCH) {
@@ -268,7 +287,7 @@ public class SjoerdsGomokuPlayer {
             return this;
         }
 
-        private Board flip() {
+        protected Board flip() {
             long[] swap = playerStones;
             playerStones = opponentStones;
             opponentStones = swap;
@@ -293,7 +312,7 @@ public class SjoerdsGomokuPlayer {
                 results[i] = resultsP[i] | resultsO[i];
             }
 
-            return (results[0] | results[1] | results[2] | results[3]) == 0;
+            return Arrays.equals(results, ALL_NIL);
         }
     }
 
@@ -310,7 +329,7 @@ public class SjoerdsGomokuPlayer {
             log("Started up");
         }
 
-        void printBoard(String type, Board board) {
+        void printBoard(@SuppressWarnings("SameParameterValue") String type, Board board) {
             if (printBoardAndMoves) {
                 log(type + " " +
                         (board.playerToMove == Board.PLAYER ? "Pl" : "Op") + " " +
@@ -341,7 +360,7 @@ public class SjoerdsGomokuPlayer {
             }
         }
 
-        private void log(String message) {
+        protected void log(String message) {
             err.println((System.nanoTime() - startUpTime) + " " + message);
         }
 
@@ -374,38 +393,145 @@ public class SjoerdsGomokuPlayer {
     static class PatternMatchMoveGenerator implements MoveGenerator {
         private static final int PLAYER = 0;
         private static final int OPPONENT = 1;
+        private static final int FIELD_IDX = 0;
+        private static final int SCORE = 1;
+
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
         private static final int[] NIL_COUNTS = new int[256];
 
         private final MoveConverter moveConverter;
+        private final DbgPrinter dbgPrinter;
 
-        PatternMatchMoveGenerator(final MoveConverter moveConverter) {
+        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter) {
             this.moveConverter = moveConverter;
+            this.dbgPrinter = dbgPrinter;
         }
 
         @Override
         public Move generateMove(final Board board) {
-            final int fieldIdx = generateFieldIdx(board);
-            return fieldIdx < 0 ? null : moveConverter.toMove(fieldIdx);
+            final int[] fieldIdxAndScore = minimax(board, 2, 1, true, Integer.MAX_VALUE, Integer.MIN_VALUE);
+            return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private int generateFieldIdx(final Board board) {
+        private void mmLog(int level, boolean isPlayer, String msg) {
+            dbgPrinter.log("| ".repeat(level) + " " + (isPlayer ? "PL" : "OP") + " " + msg);
+        }
+
+        private int[] minimax(Board board, int maxDepth, int level, boolean isPlayer, int min, int max) {
+            mmLog(level, isPlayer, "maxDepth = " + maxDepth + ", min = " + min + ", max = " + max);
+
             final int[][] match4 = match(board, Patterns.pat4);
+
+            final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
+            if (immediateWin >= 0) {
+                mmLog(level, isPlayer, "immediate win: " + immediateWin);
+                return fieldIdxAndScore(immediateWin, isPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE);
+            }
+
             final int[][] match3 = match(board, Patterns.pat3);
             final int[][] match2 = match(board, Patterns.pat2);
             final int[][] match1 = match(board, Patterns.pat1);
 
-            final int immediateWin = Arrays.mismatch(match4[PLAYER], NIL_COUNTS);
-            if (immediateWin >= 0) {
-                return immediateWin;
+            if (maxDepth <= 0) {
+                final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
+                mmLog(level, isPlayer, "maxDepth reached, scored: " + score);
+                return new int[]{-1, score};
             }
 
-            final int immediateLoss = Arrays.mismatch(match4[OPPONENT], NIL_COUNTS);
+            int[] retval = new int[]{-1, isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
+            final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1);
+            mmLog(level, isPlayer, "Examining " + moves.size() + " moves: " + moves);
+            for (int move : moves) {
+                mmLog(level, isPlayer, "Examine move " + move + " " + moveConverter.toString(move) + " (" + moves.indexOf(move) + "/" + moves.size() + ")");
+                final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
+
+                final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, min, max);
+                mmLog(level, isPlayer, "Move " + move + " " + idxAndScore[SCORE] + " current best: " + retval[FIELD_IDX] + " score: " + retval[SCORE]);
+
+                if (isPlayer && idxAndScore[SCORE] >= retval[SCORE]) {
+                    mmLog(level, isPlayer, "Maximizing, score is better");
+                    retval[FIELD_IDX] = move;
+                    retval[SCORE] = idxAndScore[SCORE];
+                } else if (!isPlayer && idxAndScore[SCORE] <= retval[SCORE]) {
+                    mmLog(level, isPlayer, "Minimizing, score is better");
+                    retval[FIELD_IDX] = move;
+                    retval[SCORE] = idxAndScore[SCORE];
+                } else {
+                    mmLog(level, isPlayer, "score is worse");
+                }
+            }
+
+            return retval;
+        }
+
+        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
+                final int[][] match1) {
+            final int immediateLoss = Arrays.mismatch(match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
-                return immediateLoss;
+                // We will need to do this move, no other will have to be searched at this level.
+                return Collections.singletonList(immediateLoss);
             }
 
-            return -1;
+            int onMove = isPlayer ? PLAYER : OPPONENT;
+            int offMove = isPlayer ? OPPONENT : PLAYER;
+            int[] scores = new int[256];
+            for (int i = 0; i < 256; i++) {
+                scores[i] =
+                        match3[onMove ][i] * 20 * 20 * 20 * 20 * 20 +
+                        match3[offMove][i] * 20 * 20 * 20 * 20 +
+                        match2[onMove ][i] * 20 * 20 * 20 +
+                        match2[offMove][i] * 20 * 20 +
+                        match1[onMove ][i] * 20 +
+                        match1[offMove][i];
+            }
+
+            final List<Map.Entry<Integer, Integer>> collect = IntStream.range(0, 255)
+                    .mapToObj(i -> Map.entry(i, scores[i]))
+                    .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
+                    .limit(maxMovesPerPly)
+                    .collect(Collectors.toList());
+
+            dbgPrinter.log("Top moves: " + collect.stream()
+                    .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
+                            e.getValue()))
+                    .collect(Collectors.joining(", ")));
+
+            if (collect.size() > 0) {
+                return collect.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+            }
+
+            // No helpful move. Just finishing up the game. Pick first valid move.
+            dbgPrinter.log("No helpful move found. Picking first valid move.");
+            for (int i = 0; i < 256; i++) {
+                final Move move = moveConverter.toMove(i);
+                if (board.validMove(move)) {
+                    return Collections.singletonList(i);
+                }
+            }
+
+            // No move ?!
+            dbgPrinter.log("No valid moves found");
+            return Collections.emptyList();
+        }
+
+        private int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
+                final int[][] match1) {
+            return (scoreMatches(match4[PLAYER]) - scoreMatches(match4[OPPONENT])) * 1000 +
+                    (scoreMatches(match3[PLAYER]) - scoreMatches(match3[OPPONENT])) * 100 +
+                    (scoreMatches(match2[PLAYER]) - scoreMatches(match2[OPPONENT])) * 10 +
+                    (scoreMatches(match1[PLAYER]) - scoreMatches(match1[OPPONENT]));
+        }
+
+        private int scoreMatches(int[] matches) {
+            int score = 0;
+            for (final int match : matches) {
+                score += match * match;
+            }
+            return score;
+        }
+
+        private int[] fieldIdxAndScore(int fieldIdx, int score) {
+            return new int[]{fieldIdx, score};
         }
 
         private int[][] match(final Board board, final Pattern[] patterns) {
@@ -490,9 +616,8 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    //@formatter:off
-    //noinspection
-//*
+//@formatter:off
+/*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
@@ -1864,11 +1989,11 @@ initPat16();
 //*/
 /*
 static class Patterns {
-final static Pattern[] pat4 = new Pattern[0];
-final static Pattern[] pat3 = new Pattern[0];
-final static Pattern[] pat2 = new Pattern[0];
-final static Pattern[] pat1 = new Pattern[0];
+    final static Pattern[] pat4 = new Pattern[0];
+    final static Pattern[] pat3 = new Pattern[0];
+    final static Pattern[] pat2 = new Pattern[0];
+    final static Pattern[] pat1 = new Pattern[0];
 }
 //*/
-    //@formatter:on
+//@formatter:on
 }
