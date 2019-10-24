@@ -12,14 +12,15 @@ import java.util.stream.IntStream;
 
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
-    protected static final long[] ALL_NIL = new long[4];
-    private static final int maxMovesPerPly = 5;
-    protected static final int MAX_DEPTH = 6;
+    private static final long[] ALL_NIL = new long[4];
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
     private final Random rnd;
     private final IO io;
+
+    private static int startMaxDepth = 6;
+    private static int maxMovesPerPly = 5;
 
     public static void main(String[] args) throws IOException {
         final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME, true);
@@ -103,7 +104,7 @@ public class SjoerdsGomokuPlayer {
 
     private void applyMove(Board board, Move move) {
         board.apply(move);
-        dbgPrinter.printBoard("GB", board);
+        dbgPrinter.printBoard(board);
     }
 
     static final class MoveConverter {
@@ -329,10 +330,9 @@ public class SjoerdsGomokuPlayer {
             log("Started up");
         }
 
-        void printBoard(@SuppressWarnings("SameParameterValue") String type, Board board) {
+        void printBoard(Board board) {
             if (printBoardAndMoves) {
-                log(type + " " +
-                        (board.playerToMove == Board.PLAYER ? "Pl" : "Op") + " " +
+                log((board.playerToMove == Board.PLAYER ? "Pl" : "Op") + " " +
                         Long.toHexString(board.playerStones[0]) + " " +
                         Long.toHexString(board.playerStones[1]) + " " +
                         Long.toHexString(board.playerStones[2]) + " " +
@@ -409,7 +409,7 @@ public class SjoerdsGomokuPlayer {
 
         @Override
         public Move generateMove(final Board board) {
-            final int[] fieldIdxAndScore = minimax(board, MAX_DEPTH, 1, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            final int[] fieldIdxAndScore = minimax(board, startMaxDepth, 1, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
@@ -564,47 +564,6 @@ public class SjoerdsGomokuPlayer {
             }
 
             return Arrays.equals(fields, p.playerStones);
-        }
-    }
-
-    static class CombinedMoveGenerator implements MoveGenerator {
-        private final IO io;
-        private final MoveGenerator[] generators;
-
-        CombinedMoveGenerator(final IO io, final MoveGenerator... generators) {
-            this.io = io;
-            this.generators = generators;
-        }
-
-        @Override
-        public Move generateMove(final Board board) {
-            for (MoveGenerator generator : generators) {
-                final Move move = generator.generateMove(board);
-                if (move != null) {
-                    io.dbgPrinter.log("Using move from " + generator.getClass().getName());
-                    return move;
-                }
-            }
-            return null;
-        }
-    }
-
-    static class MonteCarloMoveGenerator implements MoveGenerator {
-        private final Random rnd;
-        private final MoveConverter moveConverter;
-
-        private MonteCarloMoveGenerator(final Random rnd, final MoveConverter moveConverter) {
-            this.rnd = rnd;
-            this.moveConverter = moveConverter;
-        }
-
-        @Override
-        public Move generateMove(final Board board) {
-            return rnd.ints(0, 256)
-                    .mapToObj(moveConverter::toMove)
-                    .filter(board::validMove)
-                    .findAny()
-                    .orElseThrow();
         }
     }
 
