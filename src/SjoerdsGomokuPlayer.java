@@ -89,6 +89,7 @@ public class SjoerdsGomokuPlayer {
         while (true) {
             Move move = io.readMove();
             if (move == Move.QUIT) {
+                Timer.endMove(dbgPrinter);
                 dbgPrinter.log("Exit by command");
                 return;
             }
@@ -188,6 +189,7 @@ public class SjoerdsGomokuPlayer {
             dbgPrinter.separator();
             final int rowInt = robustRead();
             final int colInt = robustRead();
+            Timer.startMove();
 
             final int fieldIdx = moveConverter.toFieldIdx(rowInt, colInt);
             String moveStr = (char) rowInt + "" + (char) colInt;
@@ -235,9 +237,34 @@ public class SjoerdsGomokuPlayer {
 
             dbgPrinter.printMove("OM", moveStr, move);
 
+            Timer.endMove(dbgPrinter);
             dbgPrinter.flush(); // Flush debug output so debug and regular output are ordered correctly
             out.println(moveStr);
             out.flush();
+        }
+    }
+
+    private static final class Timer {
+        private static int moves = 0;
+        private static long timerStart;
+        private static long totalTime = 0;
+
+        private static void startMove() {
+            timerStart = System.nanoTime();
+            moves++;
+        }
+
+        private static void endMove(DbgPrinter dbgPrinter) {
+            long timerEnd = System.nanoTime();
+            long elapsedNanos = timerEnd - timerStart;
+            totalTime += elapsedNanos;
+
+            dbgPrinter.log(String.format("Move %3d; time used: %s, total %s", moves, timeFmt(elapsedNanos),
+                    timeFmt(totalTime)));
+        }
+
+        private static String timeFmt(long nanos) {
+            return String.format("%10d ns (%6.5f s)", nanos, ((double) nanos) / 1E9D);
         }
     }
 
