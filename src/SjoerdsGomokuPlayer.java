@@ -273,7 +273,7 @@ public class SjoerdsGomokuPlayer {
         private static final Move QUIT = new Move(new long[]{0, 0, 0, 0});
         private static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
 
-        private static final Move[] OPENING = new Move[]{new Move(new long[]{0, 0x100, 0, 0}), // Hh
+        private static final Move[] OPENING = {new Move(new long[]{0, 0x100, 0, 0}), // Hh
                 new Move(new long[]{0, 0, 0x80000000000000L, 0}), // Ii
                 new Move(new long[]{0, 0, 0x1000000, 0}) // Kh
         };
@@ -291,8 +291,8 @@ public class SjoerdsGomokuPlayer {
         static final int OPPONENT = ~0;
 
         int playerToMove = PLAYER;
-        long[] playerStones = new long[]{0, 0, 0, 0};
-        long[] opponentStones = new long[]{0, 0, 0, 0};
+        long[] playerStones = {0, 0, 0, 0};
+        long[] opponentStones = {0, 0, 0, 0};
 
         Board() {
         }
@@ -512,16 +512,32 @@ public class SjoerdsGomokuPlayer {
                         match1[offMove][i];
             }
 
-            final List<Map.Entry<Integer, Integer>> collect = IntStream.range(0, 255)
+            List<Map.Entry<Integer, Integer>> collect = IntStream.range(0, 255)
                     .mapToObj(i -> Map.entry(i, scores[i]))
+                    .filter(e -> e.getValue() > 0)
                     .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
-                    .limit(maxMovesPerPly)
                     .collect(Collectors.toList());
 
-            //dbgPrinter.log("Top moves: " + collect.stream()
-            //        .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
-            //                e.getValue()))
-            //        .collect(Collectors.joining(", ")));
+            if (collect.get(0).getValue() >= 160_000) {
+                // Some good moves. Let's explore the space a bit.
+                collect = collect.stream()
+                        .filter(e -> e.getValue() >= 160_000)
+                        .collect(Collectors.toList());
+            } else if (collect.get(0).getValue() < 400) {
+                // Only silly moves. Just pick the first one.
+                collect = collect.stream()
+                        .limit(1)
+                        .collect(Collectors.toList());
+            } else {
+                collect = collect.stream()
+                        .limit(2)
+                        .collect(Collectors.toList());
+            }
+
+            //dbgPrinter.log("Moves: " + collect.stream()
+            //    .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
+            //            e.getValue()))
+            //    .collect(Collectors.joining(", ")));
 
             if (collect.size() > 0) {
                 return collect.stream().map(Map.Entry::getKey).collect(Collectors.toList());
