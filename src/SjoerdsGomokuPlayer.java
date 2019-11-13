@@ -20,7 +20,6 @@ public class SjoerdsGomokuPlayer {
     private final IO io;
 
     private static int startMaxDepth = 6;
-    private static int maxMovesPerPly = 5;
 
     public static void main(String[] args) throws IOException {
         final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME, true);
@@ -37,6 +36,10 @@ public class SjoerdsGomokuPlayer {
 
     static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
         return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter);
+    }
+
+    static MoveGenerator getMoveGenerator(final Random rnd, final IO io, final GenerationAnalyzer generationAnalyzer) {
+        return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter, generationAnalyzer);
     }
 
     static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
@@ -278,7 +281,7 @@ public class SjoerdsGomokuPlayer {
                 new Move(new long[]{0, 0, 0x1000000, 0}) // Kh
         };
 
-        private long[] move;
+        long[] move;
 
         private Move(final long[] move) {
             this.move = move;
@@ -425,6 +428,26 @@ public class SjoerdsGomokuPlayer {
         Move generateMove(Board board);
     }
 
+    interface GenerationAnalyzer {
+        void reset();
+        void addChildMove(int move, String note);
+        void addChildMoves(List<Map.Entry<Integer, Integer>> moveScores);
+        void selectCurrentMove(int move);
+        void levelUp();
+        void setScore(int score);
+        void setPreferredChild(int move);
+    }
+
+    private static class DummyGenerationAnalyzer implements GenerationAnalyzer {
+        @Override public void reset() {}
+        @Override public void addChildMove(final int move, final String note) {}
+        @Override public void addChildMoves(final List<Map.Entry<Integer, Integer>> moveScores) {}
+        @Override public void selectCurrentMove(final int move) {}
+        @Override public void levelUp() {}
+        @Override public void setScore(final int score) {}
+        @Override public void setPreferredChild(final int move) {}
+    }
+
     static class PatternMatchMoveGenerator implements MoveGenerator {
         private static final int PLAYER = 0;
         private static final int OPPONENT = 1;
@@ -436,14 +459,22 @@ public class SjoerdsGomokuPlayer {
 
         private final MoveConverter moveConverter;
         private final DbgPrinter dbgPrinter;
+        private final GenerationAnalyzer debugAnalyzer;
 
         PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter) {
+            this(moveConverter, dbgPrinter, new DummyGenerationAnalyzer());
+        }
+
+        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter,
+                final GenerationAnalyzer debugAnalyzer) {
             this.moveConverter = moveConverter;
             this.dbgPrinter = dbgPrinter;
+            this.debugAnalyzer = debugAnalyzer;
         }
 
         @Override
         public Move generateMove(final Board board) {
+            debugAnalyzer.reset();
             final int[] fieldIdxAndScore = minimax(board, startMaxDepth, 1, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
@@ -453,7 +484,9 @@ public class SjoerdsGomokuPlayer {
 
             final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
             if (immediateWin >= 0) {
-                return fieldIdxAndScore(immediateWin, isPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE);
+                final int[] ints = fieldIdxAndScore(immediateWin, isPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE);
+                debugAnalyzer.setScore(ints[SCORE]);
+                return ints;
             }
 
             final int[][] match3 = match(board, Patterns.pat3);
@@ -462,16 +495,18 @@ public class SjoerdsGomokuPlayer {
 
             if (maxDepth <= 0) {
                 final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
+                debugAnalyzer.setScore(score);
                 return new int[]{-1, score};
             }
 
-            final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1);
+            final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1, level);
             int[] retval = new int[]{moves.get(0), isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
             for (int move : moves) {
-                moves.indexOf(move);
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
+                debugAnalyzer.selectCurrentMove(move);
                 final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, alpha, beta);
+                debugAnalyzer.levelUp();
 
                 if (isPlayer && idxAndScore[SCORE] > retval[SCORE]) {
                     retval[FIELD_IDX] = move;
@@ -488,13 +523,17 @@ public class SjoerdsGomokuPlayer {
                 }
             }
 
+            debugAnalyzer.setScore(retval[SCORE]);
+            debugAnalyzer.setPreferredChild(retval[FIELD_IDX]);
+
             return retval;
         }
 
         private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
-                final int[][] match1) {
+                final int[][] match1, int level) {
             final int immediateLoss = Arrays.mismatch(match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
+                debugAnalyzer.addChildMove(immediateLoss, "IMM LOSS");
                 // We will need to do this move, no other will have to be searched at this level.
                 return Collections.singletonList(immediateLoss);
             }
@@ -534,10 +573,7 @@ public class SjoerdsGomokuPlayer {
                         .collect(Collectors.toList());
             }
 
-            //dbgPrinter.log("Moves: " + collect.stream()
-            //    .map(e -> String.format("%d (%s): %d", e.getKey(), moveConverter.toString(e.getKey()),
-            //            e.getValue()))
-            //    .collect(Collectors.joining(", ")));
+            debugAnalyzer.addChildMoves(collect);
 
             if (collect.size() > 0) {
                 return collect.stream().map(Map.Entry::getKey).collect(Collectors.toList());
@@ -548,6 +584,7 @@ public class SjoerdsGomokuPlayer {
             for (int i = 0; i < 256; i++) {
                 final Move move = moveConverter.toMove(i);
                 if (board.validMove(move)) {
+                    debugAnalyzer.addChildMove(i, "ANY MOVE");
                     return Collections.singletonList(i);
                 }
             }
@@ -559,18 +596,52 @@ public class SjoerdsGomokuPlayer {
 
         private int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
                 final int[][] match1) {
-            return (scoreMatches(match4[PLAYER]) - scoreMatches(match4[OPPONENT])) * 1000 +
-                    (scoreMatches(match3[PLAYER]) - scoreMatches(match3[OPPONENT])) * 100 +
-                    (scoreMatches(match2[PLAYER]) - scoreMatches(match2[OPPONENT])) * 10 +
-                    (scoreMatches(match1[PLAYER]) - scoreMatches(match1[OPPONENT]));
+            if (isPlayer) {
+                if (256 - countMatches(match4[PLAYER], 0) > 0) {
+                    return Integer.MAX_VALUE - 20; // As good as won.
+                }
+            } else {
+                if (256 - countMatches(match4[OPPONENT], 0) > 0) {
+                    return Integer.MIN_VALUE + 21; // As good as lost.
+                }
+            }
+
+            int[] mostValuableFieldValue = {-1, -1};
+            int[] totalFieldValues = {0, 0};
+            for (int i = 0; i < 256; i++) {
+                int[] values = {
+                        match3[PLAYER  ][i] * 20 * 20 + match2[PLAYER  ][i] * 20 + match1[PLAYER  ][i],
+                        match3[OPPONENT][i] * 20 * 20 + match2[OPPONENT][i] * 20 + match1[OPPONENT][i]
+                };
+
+                if (values[PLAYER] > mostValuableFieldValue[PLAYER]) {
+                    mostValuableFieldValue[PLAYER] = values[PLAYER];
+                }
+                if (values[OPPONENT] > mostValuableFieldValue[OPPONENT]) {
+                    mostValuableFieldValue[OPPONENT] = values[OPPONENT];
+                }
+
+                totalFieldValues[PLAYER] += values[PLAYER];
+                totalFieldValues[OPPONENT] += values[OPPONENT];
+            }
+
+            if (isPlayer) {
+                totalFieldValues[PLAYER] += mostValuableFieldValue[PLAYER];
+            } else {
+                totalFieldValues[OPPONENT] += mostValuableFieldValue[OPPONENT];
+            }
+
+            return totalFieldValues[PLAYER] - totalFieldValues[OPPONENT];
         }
 
-        private int scoreMatches(int[] matches) {
-            int score = 0;
+        private int countMatches(int[] matches, int value) {
+            int count = 0;
             for (final int match : matches) {
-                score += match * match;
+                if (match == value) {
+                    count++;
+                }
             }
-            return score;
+            return count;
         }
 
         private int[] fieldIdxAndScore(int fieldIdx, int score) {

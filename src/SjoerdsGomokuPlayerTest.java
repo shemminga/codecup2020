@@ -8,8 +8,9 @@ public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
     protected static final SjoerdsGomokuPlayer.IO IO = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
+    private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
     private static final SjoerdsGomokuPlayer.MoveGenerator MOVE_GENERATOR =
-            SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO);
+            SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO, GENERATION_ANALYZER);
 
     public static void main(String[] args) {
         DBG_PRINTER.printBoardAndMoves = true;
@@ -40,11 +41,11 @@ public class SjoerdsGomokuPlayerTest {
     private static void testFinish4() {
         testMoveGen("Exploit open 3", "Af", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
-        testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
+        testMoveGen("Block open 3", "Og", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
-        testMoveGen("Block double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+        testMoveGen("Block double closed 3", "Dl", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 
@@ -79,7 +80,7 @@ public class SjoerdsGomokuPlayerTest {
         final long start = System.nanoTime();
         final SjoerdsGomokuPlayer.Move move = MOVE_GENERATOR.generateMove(board);
         final long end = System.nanoTime();
-        expect(expectedMove, toString(move), desc);
+        expect(board.copy().apply(move), expectedMove, toString(move), desc);
         System.out.printf("Test OK: %s (duration %d ns = %.5f s) %s\n", desc, end - start, ((double) end - start) * 1E-9D,
                 durationWarning(end - start));
     }
@@ -116,8 +117,12 @@ public class SjoerdsGomokuPlayerTest {
         return "";
     }
 
-    private static void expect(String expected, String actual, String desc) {
+    private static void expect(final SjoerdsGomokuPlayer.Board board, String expected, String actual, String desc) {
         if (!Objects.equals(expected, actual)) {
+            final String dot = GENERATION_ANALYZER.toString(MOVE_CONVERTER);
+            System.out.println(dot);
+
+            TestDumper.printBoard(board, expected, actual);
             throw new AssertionError("Test " + desc + " NOK: Got: " + actual + "; expected: " + expected);
         }
     }

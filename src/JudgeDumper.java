@@ -4,6 +4,8 @@ import java.util.Scanner;
 class JudgeDumper {
     static char ESC = '\u001b';
 
+    JudgeDumper() {}
+
     JudgeDumper(InputStream player1, InputStream player2) {
         sinkStream(player1, "P1: ");
         sinkStream(player2, "P2: ");
