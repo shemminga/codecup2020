@@ -41,7 +41,7 @@ public class SjoerdsGomokuPlayerTest {
     private static void testFinish4() {
         testMoveGen("Exploit open 3", "Af", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
-        testMoveGen("Block open 3", "Og", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
+        testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");

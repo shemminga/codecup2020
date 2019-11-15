@@ -19,8 +19,6 @@ public class SjoerdsGomokuPlayer {
     private final Random rnd;
     private final IO io;
 
-    private static int startMaxDepth = 6;
-
     public static void main(String[] args) throws IOException {
         final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME, true);
 
@@ -69,26 +67,26 @@ public class SjoerdsGomokuPlayer {
         if (firstMove == Move.START) {
             for (int i = 0; i < 3; i++) {
                 applyMove(board, Move.OPENING[i]);
-                io.outputMove(Move.OPENING[i]);
+                io.outputMove(Move.OPENING[i], board);
             }
         } else {
             board.playerToMove = Board.OPPONENT;
             applyMove(board, firstMove);
 
             for (int i = 0; i < 2; i++) {
-                Move move = io.readMove();
+                Move move = io.readMove(false);
                 applyMove(board, move);
             }
 
             final Move move = rnd.nextBoolean() ? Move.SWITCH : moveGenerator.generateMove(board);
             applyMove(board, move);
-            io.outputMove(move);
+            io.outputMove(move, board);
         }
 
         while (true) {
             Move move = io.readMove();
             if (move == Move.QUIT) {
-                Timer.endMove(dbgPrinter);
+                Timer.endMove(dbgPrinter, board);
                 dbgPrinter.log("Exit by command");
                 return;
             }
@@ -97,7 +95,7 @@ public class SjoerdsGomokuPlayer {
 
             final Move myMove = moveGenerator.generateMove(board);
             applyMove(board, myMove);
-            io.outputMove(myMove);
+            io.outputMove(myMove, board);
         }
     }
 
@@ -185,10 +183,14 @@ public class SjoerdsGomokuPlayer {
         }
 
         private Move readMove() throws IOException {
+            return readMove(true);
+        }
+
+        private Move readMove(boolean useTimer) throws IOException {
             dbgPrinter.separator();
             final int rowInt = robustRead();
             final int colInt = robustRead();
-            Timer.startMove();
+            if (useTimer) Timer.startMove();
 
             final int fieldIdx = moveConverter.toFieldIdx(rowInt, colInt);
             String moveStr = (char) rowInt + "" + (char) colInt;
@@ -225,7 +227,7 @@ public class SjoerdsGomokuPlayer {
             return val;
         }
 
-        private void outputMove(Move move) {
+        private void outputMove(Move move, Board board) {
             final String moveStr;
             if (move == Move.SWITCH) {
                 moveStr = "Zz";
@@ -236,7 +238,7 @@ public class SjoerdsGomokuPlayer {
 
             dbgPrinter.printMove("OM", moveStr, move);
 
-            Timer.endMove(dbgPrinter);
+            Timer.endMove(dbgPrinter, board);
             dbgPrinter.flush(); // Flush debug output so debug and regular output are ordered correctly
             out.println(moveStr);
             out.flush();
@@ -244,21 +246,19 @@ public class SjoerdsGomokuPlayer {
     }
 
     private static final class Timer {
-        private static int moves = 0;
         private static long timerStart;
         private static long totalTime = 0;
 
         private static void startMove() {
             timerStart = System.nanoTime();
-            moves++;
         }
 
-        private static void endMove(DbgPrinter dbgPrinter) {
+        private static void endMove(DbgPrinter dbgPrinter, Board board) {
             long timerEnd = System.nanoTime();
             long elapsedNanos = timerEnd - timerStart;
             totalTime += elapsedNanos;
 
-            dbgPrinter.log(String.format("Move %3d; time used: %s, total %s", moves, timeFmt(elapsedNanos),
+            dbgPrinter.log(String.format("Move %3d; time used: %s, total %s", board.moves, timeFmt(elapsedNanos),
                     timeFmt(totalTime)));
         }
 
@@ -292,6 +292,7 @@ public class SjoerdsGomokuPlayer {
         int playerToMove = PLAYER;
         long[] playerStones = {0, 0, 0, 0};
         long[] opponentStones = {0, 0, 0, 0};
+        int moves = 0;
 
         Board() {
         }
@@ -307,6 +308,7 @@ public class SjoerdsGomokuPlayer {
         }
 
         Board apply(Move move) {
+            moves++;
             if (move == Move.SWITCH) {
                 return flip();
             }
@@ -470,14 +472,33 @@ public class SjoerdsGomokuPlayer {
 
         @Override
         public Move generateMove(final Board board) {
+            final int searchDepth = determineSearchDepth(board);
+            dbgPrinter.log("Search depth: " + searchDepth);
+
             debugAnalyzer.reset();
             final int[] fieldIdxAndScore =
-                    minimax(board, startMaxDepth, 1, board.playerToMove == Board.PLAYER, Integer.MIN_VALUE,
+                    minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, Integer.MIN_VALUE,
                             Integer.MAX_VALUE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private int[] minimax(Board board, int maxDepth, int level, boolean isPlayer, int alpha, int beta) {
+        private int determineSearchDepth(Board board) {
+            if (board.moves < 5) {
+                return 4;
+            }
+
+            if (Timer.totalTime > (4E9 + 5E8)) {
+                return 2;
+            }
+
+            if (Timer.totalTime > (4E9)) {
+                return 4;
+            }
+
+            return 8;
+        }
+
+        private int[] minimax(Board board, int searchDepth, int level, boolean isPlayer, int alpha, int beta) {
             final int[][] match4 = match(board, Patterns.pat4);
 
             final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
@@ -491,7 +512,7 @@ public class SjoerdsGomokuPlayer {
             final int[][] match2 = match(board, Patterns.pat2);
             final int[][] match1 = match(board, Patterns.pat1);
 
-            if (maxDepth <= 0) {
+            if (searchDepth <= 0) {
                 final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
                 debugAnalyzer.setScore(score);
                 return new int[]{-1, score};
@@ -503,7 +524,7 @@ public class SjoerdsGomokuPlayer {
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
                 debugAnalyzer.selectCurrentMove(move);
-                final int[] idxAndScore = minimax(nextBoard, maxDepth - 1, level + 1, !isPlayer, alpha, beta);
+                final int[] idxAndScore = minimax(nextBoard, searchDepth - 1, level + 1, !isPlayer, alpha, beta);
                 debugAnalyzer.levelUp();
 
                 if (isPlayer && idxAndScore[SCORE] > retval[SCORE]) {
