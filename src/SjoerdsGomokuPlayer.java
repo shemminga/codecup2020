@@ -72,6 +72,7 @@ public class SjoerdsGomokuPlayer {
                 io.outputMove(Move.OPENING[i]);
             }
         } else {
+            board.playerToMove = Board.OPPONENT;
             applyMove(board, firstMove);
 
             for (int i = 0; i < 2; i++) {
@@ -79,14 +80,9 @@ public class SjoerdsGomokuPlayer {
                 applyMove(board, move);
             }
 
-            if (rnd.nextBoolean()) {
-                board.flip();
-                io.outputMove(Move.SWITCH);
-            } else {
-                final Move move = moveGenerator.generateMove(board);
-                applyMove(board, move);
-                io.outputMove(move);
-            }
+            final Move move = rnd.nextBoolean() ? Move.SWITCH : moveGenerator.generateMove(board);
+            applyMove(board, move);
+            io.outputMove(move);
         }
 
         while (true) {
@@ -274,7 +270,7 @@ public class SjoerdsGomokuPlayer {
     static final class Move {
         private static final Move START = new Move(new long[]{0, 0, 0, 0});
         private static final Move QUIT = new Move(new long[]{0, 0, 0, 0});
-        private static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
+        static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
 
         private static final Move[] OPENING = {new Move(new long[]{0, 0x100, 0, 0}), // Hh
                 new Move(new long[]{0, 0, 0x80000000000000L, 0}), // Ii
@@ -475,7 +471,9 @@ public class SjoerdsGomokuPlayer {
         @Override
         public Move generateMove(final Board board) {
             debugAnalyzer.reset();
-            final int[] fieldIdxAndScore = minimax(board, startMaxDepth, 1, true, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            final int[] fieldIdxAndScore =
+                    minimax(board, startMaxDepth, 1, board.playerToMove == Board.PLAYER, Integer.MIN_VALUE,
+                            Integer.MAX_VALUE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 

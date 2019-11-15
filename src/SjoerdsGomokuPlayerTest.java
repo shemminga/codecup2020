@@ -18,18 +18,18 @@ public class SjoerdsGomokuPlayerTest {
         DBG_PRINTER.printMove("Opening 2", "Ii", MOVE_CONVERTER.toMove(136));
         DBG_PRINTER.printMove("Opening 3", "Kh", MOVE_CONVERTER.toMove(167));
         DBG_PRINTER.printBoardAndMoves = false;
+        // Warm-up loading patterns and such
+        MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
 
         testMoves();
     }
 
     private static void testMoves() {
-        // Warm-up loading patterns and such
-        MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
-
         testFinish5();
         testFinish4();
 
         testScenario1();
+        testScenario2();
     }
 
     private static void testFinish5() {
@@ -54,6 +54,13 @@ public class SjoerdsGomokuPlayerTest {
                 "Li", "Lm");
         testScenario("Scenario 1", true, board, "Hi", "Ii", "Ij", "Hk",
                 /* Finishing moves: */ "Fg", "Ef", "Jk");
+    }
+
+    private static void testScenario2() {
+        final SjoerdsGomokuPlayer.Board board = newBoard("El", "Fk", "Ek", "Zz", "Ej", "Di", "Fj", "Gj", "Gk", "Fi",
+                "Ei", "Dh", "Eh", "Eg", "Dj", "Hl", "Fl", "Fm", "Ff", "Bj", "Gg", "Ck", "Hf", "Fh", "Gf");
+        TestDumper.printBoard(board, null, null);
+        testScenario("Scenario 2", false, board,"Ak");
     }
 
     private static void testScenario(final String desc, final boolean blackStarts, final SjoerdsGomokuPlayer.Board board, final String... steps) {
@@ -92,15 +99,14 @@ public class SjoerdsGomokuPlayerTest {
                 .map(SjoerdsGomokuPlayerTest::toMove)
                 .forEach(board::apply);
 
-        if (moves.length % 2 == 1) {
-            // Play opponent
-            board.flip();
-        }
-
         return board;
     }
 
     private static SjoerdsGomokuPlayer.Move toMove(String mv) {
+        if (mv.equals("Zz")) {
+            return SjoerdsGomokuPlayer.Move.SWITCH;
+        }
+
         final int fieldIdx = MOVE_CONVERTER.toFieldIdx(mv.charAt(0), mv.charAt(1));
         return MOVE_CONVERTER.toMove(fieldIdx);
     }
