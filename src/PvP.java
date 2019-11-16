@@ -4,6 +4,9 @@ import java.util.Random;
 
 public class PvP {
     public static void main(String[] args) throws IOException, InterruptedException {
+        System.out.println("Waiting for enter");
+        System.in.read();
+
         PlayerPipes player1Pipes = new PlayerPipes();
         PlayerPipes player2Pipes = new PlayerPipes();
 

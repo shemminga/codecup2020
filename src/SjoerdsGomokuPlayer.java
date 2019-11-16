@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
-    private static final long[] ALL_NIL = new long[4];
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
@@ -245,9 +244,9 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    private static final class Timer {
+    static final class Timer {
         private static long timerStart;
-        private static long totalTime = 0;
+        static long totalTime = 0;
 
         private static void startMove() {
             timerStart = System.nanoTime();
@@ -349,7 +348,7 @@ public class SjoerdsGomokuPlayer {
                 results[i] = resultsP[i] | resultsO[i];
             }
 
-            return Arrays.equals(results, ALL_NIL);
+            return (results[0] | results[1] | results[2] | results[3]) == 0;
         }
     }
 
@@ -499,7 +498,7 @@ public class SjoerdsGomokuPlayer {
         }
 
         private int[] minimax(Board board, int searchDepth, int level, boolean isPlayer, int alpha, int beta) {
-            final int[][] match4 = match(board, Patterns.pat4);
+            final int[][] match4 = match(board, Patterns.pat4, level == 1);
 
             final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
             if (immediateWin >= 0) {
@@ -508,9 +507,9 @@ public class SjoerdsGomokuPlayer {
                 return ints;
             }
 
-            final int[][] match3 = match(board, Patterns.pat3);
-            final int[][] match2 = match(board, Patterns.pat2);
-            final int[][] match1 = match(board, Patterns.pat1);
+            final int[][] match3 = match(board, Patterns.pat3, level == 1);
+            final int[][] match2 = match(board, Patterns.pat2, level == 1);
+            final int[][] match1 = match(board, Patterns.pat1, level == 1);
 
             if (searchDepth <= 0) {
                 final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
@@ -667,24 +666,38 @@ public class SjoerdsGomokuPlayer {
             return new int[]{fieldIdx, score};
         }
 
-        private int[][] match(final Board board, final Pattern[] patterns) {
+        private int[][] match(final Board board, final Pattern[] patterns, final boolean removeUnneeded) {
             final int[][] possibleMoves = new int[2][256];
 
-            for (final Pattern p : patterns) {
-                final long[] empties = new long[4];
-                for (int i = 0; i < 4; i++) {
-                    empties[i] = (board.playerStones[i] | board.opponentStones[i]) & p.emptyFields[i];
-                }
-
-                if (!Arrays.equals(empties, ALL_NIL)) {
+            for (int i = 0; i < patterns.length; i++) {
+                final Pattern p = patterns[i];
+                if (p == null) {
                     continue;
                 }
 
-                if (matches(board.playerStones, p)) {
+                if (((board.playerStones[0] | board.opponentStones[0]) & p.emptyFields[0] |
+                        (board.playerStones[1] | board.opponentStones[1]) & p.emptyFields[1] |
+                        (board.playerStones[2] | board.opponentStones[2]) & p.emptyFields[2] |
+                        (board.playerStones[3] | board.opponentStones[3]) & p.emptyFields[3]) != 0) {
+                    if (removeUnneeded) {
+                        // These won't ever match again, because a field that is required to be empty has been filled.
+                        // Only do this for the top-level minimax, obviously.
+                        patterns[i] = null;
+                    }
+                    continue;
+                }
+
+                if ((board.playerStones[0] & p.playerStones[0]) == p.playerStones[0] &&
+                        (board.playerStones[1] & p.playerStones[1]) == p.playerStones[1] &&
+                        (board.playerStones[2] & p.playerStones[2]) == p.playerStones[2] &&
+                        (board.playerStones[3] & p.playerStones[3]) == p.playerStones[3]) {
                     countPossibleMoves(possibleMoves[PLAYER], p);
                 }
 
-                if (matches(board.opponentStones, p)) {
+                if ((board.opponentStones[0] & p.playerStones[0]) == p.playerStones[0] &&
+                        (board.opponentStones[1] & p.playerStones[1]) == p.playerStones[1] &&
+                        (board.opponentStones[2] & p.playerStones[2]) == p.playerStones[2] &&
+                        (board.opponentStones[3] & p.playerStones[3]) == p.playerStones[3]) {
                     countPossibleMoves(possibleMoves[OPPONENT], p);
                 }
             }
@@ -697,19 +710,10 @@ public class SjoerdsGomokuPlayer {
                 possibleMove[fieldIdx]++;
             }
         }
-
-        private boolean matches(final long[] stones, final Pattern p) {
-            final long[] fields = new long[4];
-            for (int i = 0; i < 4; i++) {
-                fields[i] = stones[i] & p.playerStones[i];
-            }
-
-            return Arrays.equals(fields, p.playerStones);
-        }
     }
 
 //@formatter:off
-/*
+//*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
