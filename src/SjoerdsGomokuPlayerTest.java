@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -12,14 +13,17 @@ public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.MoveGenerator MOVE_GENERATOR =
             SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO, GENERATION_ANALYZER);
 
-    public static void main(String[] args) {
-        DBG_PRINTER.printBoardAndMoves = true;
+    public static void main(String[] args) throws IOException {
+        DBG_PRINTER.printMoves = true;
         DBG_PRINTER.printMove("Opening 1", "Hh", MOVE_CONVERTER.toMove(119));
         DBG_PRINTER.printMove("Opening 2", "Ii", MOVE_CONVERTER.toMove(136));
         DBG_PRINTER.printMove("Opening 3", "Kh", MOVE_CONVERTER.toMove(167));
-        DBG_PRINTER.printBoardAndMoves = false;
+        DBG_PRINTER.printMoves = false;
         // Warm-up loading patterns and such
         MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
+
+        //System.out.println("Waiting for enter");
+        //System.in.read();
 
         testMoves();
     }
@@ -39,13 +43,13 @@ public class SjoerdsGomokuPlayerTest {
     }
 
     private static void testFinish4() {
-        testMoveGen("Exploit open 3", "Af", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
+        testMoveGen("Exploit open 3", "Ab", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
         testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
-        testMoveGen("Block double closed 3", "Dl", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+        testMoveGen("Block double closed 3", "Em", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 
@@ -59,7 +63,6 @@ public class SjoerdsGomokuPlayerTest {
     private static void testScenario2() {
         final SjoerdsGomokuPlayer.Board board = newBoard("El", "Fk", "Ek", "Zz", "Ej", "Di", "Fj", "Gj", "Gk", "Fi",
                 "Ei", "Dh", "Eh", "Eg", "Dj", "Hl", "Fl", "Fm", "Ff", "Bj", "Gg", "Ck", "Hf", "Fh", "Gf");
-        TestDumper.printBoard(board, null, null);
         testScenario("Scenario 2", false, board,"Ak");
     }
 
@@ -84,10 +87,16 @@ public class SjoerdsGomokuPlayerTest {
 
     private static void testMoveGen(final String desc, final String expectedMove,
             final SjoerdsGomokuPlayer.Board board) {
+        Patterns.init();
+        SjoerdsGomokuPlayer.Timer.generatedMoves = 0;
+        SjoerdsGomokuPlayer.Timer.boardsScored = 0;
         final long start = System.nanoTime();
         final SjoerdsGomokuPlayer.Move move = MOVE_GENERATOR.generateMove(board);
         final long end = System.nanoTime();
         expect(board.copy().apply(move), expectedMove, toString(move), desc);
+
+        System.out.printf("Generated moves: %d, boards scored: %d\n", SjoerdsGomokuPlayer.Timer.generatedMoves,
+                SjoerdsGomokuPlayer.Timer.boardsScored);
         System.out.printf("Test OK: %s (duration %d ns = %.5f s) %s\n", desc, end - start, ((double) end - start) * 1E-9D,
                 durationWarning(end - start));
     }

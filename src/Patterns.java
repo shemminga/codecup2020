@@ -14368,7 +14368,9 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 3000, arr.length);
     }
 
-    static {
+    static { init(); }
+
+    static void init() {
         initPat40();
         initPat41();
         initPat42();

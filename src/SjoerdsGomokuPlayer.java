@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
@@ -66,7 +67,7 @@ public class SjoerdsGomokuPlayer {
         if (firstMove == Move.START) {
             for (int i = 0; i < 3; i++) {
                 applyMove(board, Move.OPENING[i]);
-                io.outputMove(Move.OPENING[i], board);
+                io.outputMove(Move.OPENING[i], board, i == 2);
             }
         } else {
             board.playerToMove = Board.OPPONENT;
@@ -79,13 +80,13 @@ public class SjoerdsGomokuPlayer {
 
             final Move move = rnd.nextBoolean() ? Move.SWITCH : moveGenerator.generateMove(board);
             applyMove(board, move);
-            io.outputMove(move, board);
+            io.outputMove(move, board, true);
         }
 
         while (true) {
             Move move = io.readMove();
             if (move == Move.QUIT) {
-                Timer.endMove(dbgPrinter, board);
+                Timer.endMove(dbgPrinter, board, true);
                 dbgPrinter.log("Exit by command");
                 return;
             }
@@ -94,13 +95,12 @@ public class SjoerdsGomokuPlayer {
 
             final Move myMove = moveGenerator.generateMove(board);
             applyMove(board, myMove);
-            io.outputMove(myMove, board);
+            io.outputMove(myMove, board, true);
         }
     }
 
     private void applyMove(Board board, Move move) {
         board.apply(move);
-        dbgPrinter.printBoard(board);
     }
 
     static final class MoveConverter {
@@ -197,19 +197,19 @@ public class SjoerdsGomokuPlayer {
             if (fieldIdx == 307) {
                 // = "St", first letters of Start
                 in.skip(3);
-                dbgPrinter.printMove("IM", moveStr, Move.START);
+                dbgPrinter.printMove("In ", moveStr, Move.START);
                 return Move.START;
             }
 
             if (fieldIdx == 276) {
                 // = "Qu", first letters of Quit
-                dbgPrinter.printMove("IM", moveStr, Move.QUIT);
+                dbgPrinter.printMove("In ", moveStr, Move.QUIT);
                 return Move.QUIT;
             }
 
             final Move move = moveConverter.toMove(fieldIdx);
 
-            dbgPrinter.printMove("IM", moveStr, move);
+            dbgPrinter.printMove("In ", moveStr, move);
             return move;
         }
 
@@ -226,7 +226,7 @@ public class SjoerdsGomokuPlayer {
             return val;
         }
 
-        private void outputMove(Move move, Board board) {
+        private void outputMove(Move move, Board board, boolean stopTimer) {
             final String moveStr;
             if (move == Move.SWITCH) {
                 moveStr = "Zz";
@@ -235,9 +235,9 @@ public class SjoerdsGomokuPlayer {
                 moveStr = moveConverter.toString(fieldIdx);
             }
 
-            dbgPrinter.printMove("OM", moveStr, move);
+            dbgPrinter.printMove("Out", moveStr, move);
 
-            Timer.endMove(dbgPrinter, board);
+            Timer.endMove(dbgPrinter, board, stopTimer);
             dbgPrinter.flush(); // Flush debug output so debug and regular output are ordered correctly
             out.println(moveStr);
             out.flush();
@@ -245,6 +245,8 @@ public class SjoerdsGomokuPlayer {
     }
 
     static final class Timer {
+        static int generatedMoves = 0;
+        static int boardsScored = 0;
         private static long timerStart;
         static long totalTime = 0;
 
@@ -252,13 +254,19 @@ public class SjoerdsGomokuPlayer {
             timerStart = System.nanoTime();
         }
 
-        private static void endMove(DbgPrinter dbgPrinter, Board board) {
+        private static void endMove(DbgPrinter dbgPrinter, Board board, boolean stopTimer) {
+            dbgPrinter.log(String.format("Generated moves: %d, boards scored: %d", generatedMoves, boardsScored));
+            if (stopTimer) {
+                generatedMoves = 0;
+                boardsScored = 0;
+            }
+
             long timerEnd = System.nanoTime();
             long elapsedNanos = timerEnd - timerStart;
-            totalTime += elapsedNanos;
-
-            dbgPrinter.log(String.format("Move %3d; time used: %s, total %s", board.moves, timeFmt(elapsedNanos),
-                    timeFmt(totalTime)));
+            if (stopTimer)
+                totalTime += elapsedNanos;
+            dbgPrinter.log(String.format("Move %3d; time used%s: %s, total %s", board.moves,
+                    stopTimer ? "" : " (running)", timeFmt(elapsedNanos), timeFmt(totalTime)));
         }
 
         private static String timeFmt(long nanos) {
@@ -355,33 +363,18 @@ public class SjoerdsGomokuPlayer {
     static class DbgPrinter {
         private final PrintStream err;
         private final long startUpTime;
-        boolean printBoardAndMoves;
+        boolean printMoves;
 
-        DbgPrinter(final PrintStream err, final long startUpTime, final boolean printBoardAndMoves) {
+        DbgPrinter(final PrintStream err, final long startUpTime, final boolean printMoves) {
             this.err = err;
             this.startUpTime = startUpTime;
-            this.printBoardAndMoves = printBoardAndMoves;
+            this.printMoves = printMoves;
 
             log("Started up");
         }
 
-        void printBoard(Board board) {
-            if (printBoardAndMoves) {
-                log((board.playerToMove == Board.PLAYER ? "Pl" : "Op") + " " +
-                        Long.toHexString(board.playerStones[0]) + " " +
-                        Long.toHexString(board.playerStones[1]) + " " +
-                        Long.toHexString(board.playerStones[2]) + " " +
-                        Long.toHexString(board.playerStones[3]) + " / " +
-
-                        Long.toHexString(board.opponentStones[0]) + " " +
-                        Long.toHexString(board.opponentStones[1]) + " " +
-                        Long.toHexString(board.opponentStones[2]) + " " +
-                        Long.toHexString(board.opponentStones[3]));
-            }
-        }
-
         void printMove(String type, String moveStr, Move move) {
-            if (printBoardAndMoves) {
+            if (printMoves) {
                 if (move == Move.START) {
                     log(type + " " + moveStr + " START");
                 } else if (move == Move.QUIT) {
@@ -518,6 +511,7 @@ public class SjoerdsGomokuPlayer {
             }
 
             final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1, level);
+            Timer.generatedMoves += moves.size();
             int[] retval = new int[]{moves.get(0), isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
             for (int move : moves) {
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
@@ -560,41 +554,71 @@ public class SjoerdsGomokuPlayer {
             int offMove = isPlayer ? OPPONENT : PLAYER;
             int[] scores = new int[256];
             for (int i = 0; i < 256; i++) {
+                if (match3[onMove][i] >= 2) {
+                    // Winning move.
+                    scores[i] = 2_000_000_000;
+                    continue;
+                }
+
+                if (match3[offMove][i] >= 2) {
+                    // Losing if not handled.
+                    scores[i] = 1_900_000_000;
+                    continue;
+                }
+
+                if (match3[onMove][i] >= 1) {
+                    // Possible chaining opportunity
+                    scores[i] = 1_600_000_000;
+                    continue;
+                }
+
+                if (match3[offMove][i] >= 1) {
+                    // Possible opponent chaining opportunity
+                    scores[i] = 1_500_000_000;
+                    continue;
+                }
+
+                if (match2[onMove][i] >= 2) {
+                    // Maybe there's an opportunity to create 4 match3s
+                    scores[i] = 1_300_000_000;
+                    continue;
+                }
+
+                if (match2[offMove][i] >= 2) {
+                    // Maybe there's an opportunity to create 4 match3s
+                    scores[i] = 1_200_000_000;
+                    continue;
+                }
+
                 scores[i] =
-                        match3[onMove ][i] * 20 * 20 * 20 * 20 * 20 +
-                        match3[offMove][i] * 20 * 20 * 20 * 20 +
-                        match2[onMove ][i] * 20 * 20 * 20 +
-                        match2[offMove][i] * 20 * 20 +
-                        match1[onMove ][i] * 20 +
+                        match2[onMove ][i] * 20 + // Lenghtening 2s can create opportunities
+                        match2[offMove][i] * 20 +
+                        match1[onMove ][i] +
                         match1[offMove][i];
             }
 
-            List<Map.Entry<Integer, Integer>> collect = IntStream.range(0, 255)
+            final List<Map.Entry<Integer, Integer>> allMoves = IntStream.range(0, 255)
                     .mapToObj(i -> Map.entry(i, scores[i]))
                     .filter(e -> e.getValue() > 0)
                     .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
                     .collect(Collectors.toList());
 
-            if (collect.get(0).getValue() >= 160_000) {
-                // Some good moves. Let's explore the space a bit.
-                collect = collect.stream()
-                        .filter(e -> e.getValue() >= 160_000)
-                        .collect(Collectors.toList());
-            } else if (collect.get(0).getValue() < 400) {
-                // Only silly moves. Just pick the first one.
-                collect = collect.stream()
-                        .limit(1)
-                        .collect(Collectors.toList());
-            } else {
-                collect = collect.stream()
-                        .limit(2)
-                        .collect(Collectors.toList());
-            }
+            final Stream<Map.Entry<Integer, Integer>> strongMoves = allMoves.stream()
+                    .filter(e -> e.getValue() >= 1_000_000_000);
+            final Stream<Map.Entry<Integer, Integer>> weakMoves = allMoves.stream()
+                    .filter(e -> e.getValue() < 1_000_000_000)
+                    .limit(2);
 
-            debugAnalyzer.addChildMoves(collect);
+            final List<Map.Entry<Integer, Integer>> genMoves = Stream.concat(strongMoves, weakMoves)
+                    .limit(3) // Unfortunately, not enough power
+                    .collect(Collectors.toList());
 
-            if (collect.size() > 0) {
-                return collect.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+            debugAnalyzer.addChildMoves(genMoves);
+
+            if (genMoves.size() > 0) {
+                return genMoves.stream()
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
             }
 
             // No helpful move. Just finishing up the game. Pick first valid move.
@@ -614,6 +638,8 @@ public class SjoerdsGomokuPlayer {
 
         private int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
                 final int[][] match1) {
+            Timer.boardsScored++;
+
             if (isPlayer) {
                 if (256 - countMatches(match4[PLAYER], 0) > 0) {
                     return Integer.MAX_VALUE - 20; // As good as won.
@@ -713,7 +739,7 @@ public class SjoerdsGomokuPlayer {
     }
 
 //@formatter:off
-//*
+/*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
