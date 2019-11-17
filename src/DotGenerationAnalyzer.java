@@ -66,7 +66,7 @@ public class DotGenerationAnalyzer implements SjoerdsGomokuPlayer.GenerationAnal
         return sb.toString();
     }
 
-    private void toString(final DotNode node, final int level, final StringBuilder sb,
+    private static void toString(final DotNode node, final int level, final StringBuilder sb,
             final SjoerdsGomokuPlayer.MoveConverter moveConverter) {
         sb.append(node.graphNodeName)
                 .append('[');
@@ -76,7 +76,7 @@ public class DotGenerationAnalyzer implements SjoerdsGomokuPlayer.GenerationAnal
             sb.append("label=<")
                     .append(node.move)
                     .append(" (")
-                    .append(moveConverter.toString(node.move))
+                    .append(SjoerdsGomokuPlayer.MoveConverter.toString(node.move))
                     .append(")<br/>")
                     .append(node.generationValue)
                     .append("<br/>")
@@ -103,10 +103,10 @@ public class DotGenerationAnalyzer implements SjoerdsGomokuPlayer.GenerationAnal
     }
 
     private static class DotNode {
-        private String graphNodeName;
+        private final String graphNodeName;
         private final int move;
         private final DotNode parent;
-        private String generationValue;
+        private final String generationValue;
         private Integer heuristicValue;
         private List<DotNode> children;
         private boolean preferred;

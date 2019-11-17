@@ -25,19 +25,15 @@ public class SjoerdsGomokuPlayer {
         final Random rnd = makeRandom(dbgPrinter);
         final IO io = makeIO(dbgPrinter, System.in, System.out);
 
-        MoveGenerator gen = getMoveGenerator(rnd, io);
+        MoveGenerator gen = getMoveGenerator(io);
 
         final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, rnd, io, dbgPrinter);
 
         player.play();
     }
 
-    static MoveGenerator getMoveGenerator(final Random rnd, final IO io) {
+    static MoveGenerator getMoveGenerator(final IO io) {
         return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter);
-    }
-
-    static MoveGenerator getMoveGenerator(final Random rnd, final IO io, final GenerationAnalyzer generationAnalyzer) {
-        return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter, generationAnalyzer);
     }
 
     static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
@@ -99,7 +95,7 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    private void applyMove(Board board, Move move) {
+    private static void applyMove(Board board, Move move) {
         board.apply(move);
     }
 
@@ -135,12 +131,12 @@ public class SjoerdsGomokuPlayer {
             return new Move(moveLong);
         }
 
-        int toFieldIdx(Move move) {
+        static int toFieldIdx(Move move) {
             return findBit(move.move[0], 0) + findBit(move.move[1], 64) + findBit(move.move[2], 128) +
                     findBit(move.move[3], 192);
         }
 
-        int toFieldIdx(int rowInt, int colInt) {
+        static int toFieldIdx(int rowInt, int colInt) {
             return (rowInt - 'A') * 16 + (colInt - 'a');
         }
 
@@ -158,7 +154,7 @@ public class SjoerdsGomokuPlayer {
             return 0;
         }
 
-        String toString(final int fieldIdx) {
+        static String toString(final int fieldIdx) {
             final int col = fieldIdx % 16;
             final int row = (fieldIdx - col) / 16;
 
@@ -169,10 +165,10 @@ public class SjoerdsGomokuPlayer {
     }
 
     static final class IO {
-        private final MoveConverter moveConverter;
+        final MoveConverter moveConverter;
+        final DbgPrinter dbgPrinter;
         private final InputStream in;
         private final PrintStream out;
-        private final DbgPrinter dbgPrinter;
 
         IO(MoveConverter moveConverter, InputStream in, PrintStream out, final DbgPrinter dbgPrinter) {
             this.moveConverter = moveConverter;
@@ -191,7 +187,7 @@ public class SjoerdsGomokuPlayer {
             final int colInt = robustRead();
             if (useTimer) Timer.startMove();
 
-            final int fieldIdx = moveConverter.toFieldIdx(rowInt, colInt);
+            final int fieldIdx = MoveConverter.toFieldIdx(rowInt, colInt);
             String moveStr = (char) rowInt + "" + (char) colInt;
 
             if (fieldIdx == 307) {
@@ -231,8 +227,8 @@ public class SjoerdsGomokuPlayer {
             if (move == Move.SWITCH) {
                 moveStr = "Zz";
             } else {
-                int fieldIdx = moveConverter.toFieldIdx(move);
-                moveStr = moveConverter.toString(fieldIdx);
+                int fieldIdx = MoveConverter.toFieldIdx(move);
+                moveStr = MoveConverter.toString(fieldIdx);
             }
 
             dbgPrinter.printMove("Out", moveStr, move);
@@ -474,7 +470,7 @@ public class SjoerdsGomokuPlayer {
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private int determineSearchDepth(Board board) {
+        private static int determineSearchDepth(Board board) {
             if (board.moves < 5) {
                 return 4;
             }
@@ -636,8 +632,8 @@ public class SjoerdsGomokuPlayer {
             return Collections.emptyList();
         }
 
-        private int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
-                final int[][] match1) {
+        private static int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3,
+                final int[][] match2, final int[][] match1) {
             Timer.boardsScored++;
 
             if (isPlayer) {
@@ -678,7 +674,7 @@ public class SjoerdsGomokuPlayer {
             return totalFieldValues[PLAYER] - totalFieldValues[OPPONENT];
         }
 
-        private int countMatches(int[] matches, int value) {
+        private static int countMatches(int[] matches, int value) {
             int count = 0;
             for (final int match : matches) {
                 if (match == value) {
@@ -688,11 +684,11 @@ public class SjoerdsGomokuPlayer {
             return count;
         }
 
-        private int[] fieldIdxAndScore(int fieldIdx, int score) {
+        private static int[] fieldIdxAndScore(int fieldIdx, int score) {
             return new int[]{fieldIdx, score};
         }
 
-        private int[][] match(final Board board, final Pattern[] patterns, final boolean removeUnneeded) {
+        private static int[][] match(final Board board, final Pattern[] patterns, final boolean removeUnneeded) {
             final int[][] possibleMoves = new int[2][256];
 
             for (int i = 0; i < patterns.length; i++) {
@@ -731,7 +727,7 @@ public class SjoerdsGomokuPlayer {
             return possibleMoves;
         }
 
-        private void countPossibleMoves(final int[] possibleMove, final Pattern p) {
+        private static void countPossibleMoves(final int[] possibleMove, final Pattern p) {
             for (int fieldIdx : p.fieldIdxs) {
                 possibleMove[fieldIdx]++;
             }

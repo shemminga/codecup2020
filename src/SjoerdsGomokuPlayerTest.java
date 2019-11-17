@@ -1,17 +1,16 @@
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Random;
 
 public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
             new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
+    protected static final SjoerdsGomokuPlayer.IO IO = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
-    protected static final SjoerdsGomokuPlayer.IO IO = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
     private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
     private static final SjoerdsGomokuPlayer.MoveGenerator MOVE_GENERATOR =
-            SjoerdsGomokuPlayer.getMoveGenerator(new Random(), IO, GENERATION_ANALYZER);
+            new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, GENERATION_ANALYZER);
 
     public static void main(String[] args) throws IOException {
         DBG_PRINTER.printMoves = true;
@@ -116,13 +115,13 @@ public class SjoerdsGomokuPlayerTest {
             return SjoerdsGomokuPlayer.Move.SWITCH;
         }
 
-        final int fieldIdx = MOVE_CONVERTER.toFieldIdx(mv.charAt(0), mv.charAt(1));
+        final int fieldIdx = SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(mv.charAt(0), mv.charAt(1));
         return MOVE_CONVERTER.toMove(fieldIdx);
     }
 
     private static String toString(SjoerdsGomokuPlayer.Move move) {
-        final int fieldIdx = MOVE_CONVERTER.toFieldIdx(move);
-        return MOVE_CONVERTER.toString(fieldIdx);
+        final int fieldIdx = SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(move);
+        return SjoerdsGomokuPlayer.MoveConverter.toString(fieldIdx);
     }
 
     private static String durationWarning(final long duration) {

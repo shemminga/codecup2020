@@ -32,7 +32,7 @@ public class PvP {
         final Random random = SjoerdsGomokuPlayer.makeRandom(dbgPrinter);
         final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(dbgPrinter, pipes.in.readEnd, pipes.out.writeEnd);
 
-        final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(random, io);
+        final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(io);
 
         return new SjoerdsGomokuPlayer(moveGenerator, random, io, dbgPrinter);
     }

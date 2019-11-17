@@ -2,24 +2,24 @@ import java.util.Arrays;
 
 @SuppressWarnings("FieldCanBeLocal")
 class TestDumper {
-    private static int BG_RED = 41;
-    private static int BG_CYAN = 44;
-    private static int BG_GREY = 47;
-    private static int FG_CYAN = 34;
-    private static int FG_GREY = 37;
-    private static int FG_BLACK = 30;
-    private static int FG_WHITE = 97;
-    private static int RESET = 0;
+    private static final int BG_RED = 41;
+    private static final int BG_CYAN = 44;
+    private static final int BG_GREY = 47;
+    private static final int FG_CYAN = 34;
+    private static final int FG_GREY = 37;
+    private static final int FG_BLACK = 30;
+    private static final int FG_WHITE = 97;
+    private static final int RESET = 0;
 
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER = new SjoerdsGomokuPlayer.MoveConverter();
-    private static char ESC = '\u001b';
+    private static final char ESC = '\u001b';
 
     static void printBoard(SjoerdsGomokuPlayer.Board board, final String expected, final String actual) {
         System.out.print("  abcd efgh ijkl mnop");
 
         for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++) {
             final SjoerdsGomokuPlayer.Move move = MOVE_CONVERTER.toMove(fieldIdx);
-            final String fieldStr = MOVE_CONVERTER.toString(fieldIdx);
+            final String fieldStr = SjoerdsGomokuPlayer.MoveConverter.toString(fieldIdx);
 
             if (fieldIdx % 16 == 0) {
                 if (fieldIdx > 0 && fieldIdx % 64 == 0) System.out.println();

@@ -331,7 +331,7 @@ public class GenPatterns {
             final SjoerdsGomokuPlayer.Board board = new SjoerdsGomokuPlayer.Board();
 
             Arrays.stream(moves)
-                    .map(move -> MOVE_CONVERTER.toFieldIdx(move.charAt(0), move.charAt(1)))
+                    .map(move -> SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(move.charAt(0), move.charAt(1)))
                     .map(MOVE_CONVERTER::toMove)
                     .forEach(move -> {
                         board.playerToMove = SjoerdsGomokuPlayer.Board.PLAYER;
@@ -342,7 +342,7 @@ public class GenPatterns {
                     board.playerStones[3]};
 
             int[] fieldIdxs = this.emptyFields.stream()
-                    .mapToInt(r -> MOVE_CONVERTER.toFieldIdx(r.charAt(0), r.charAt(1)))
+                    .mapToInt(r -> SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(r.charAt(0), r.charAt(1)))
                     .toArray();
 
             SjoerdsGomokuPlayer.Board emptyFieldsBoard = new SjoerdsGomokuPlayer.Board();
