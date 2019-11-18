@@ -59,7 +59,7 @@ public class GenPatterns {
             methodCalls.addAll(strings);
         }
 
-        System.out.println("static{");
+        System.out.println("Patterns() {");
         methodCalls.forEach(mc -> System.out.println(mc + "();"));
         System.out.println("}");
 
@@ -88,12 +88,12 @@ public class GenPatterns {
 
         final List<String> methodCalls = new ArrayList<>();
 
-        System.out.println("final static Pattern[] pat" + n + " = new Pattern[" + strings.size() + "];");
+        System.out.println("final Pattern[] pat" + n + " = new Pattern[" + strings.size() + "];");
 
         int methodCounter = 0;
         String methodName = "initPat" + n + "" + methodCounter;
         methodCalls.add(methodName);
-        System.out.println("private static void " + methodName + "(){");
+        System.out.println("private void " + methodName + "(){");
         System.out.println("var arr = new Pattern[]{");
 
         boolean first = true;
@@ -111,7 +111,7 @@ public class GenPatterns {
                 System.out.println("};");
                 System.out.println("System.arraycopy(arr,0,pat" + n + "," + destPos + ",arr.length);");
                 System.out.println("}");
-                System.out.println("private static void " + methodName + "(){");
+                System.out.println("private void " + methodName + "(){");
                 System.out.println("var arr = new Pattern[]{");
                 first = true;
                 destPos = i + 1;
@@ -146,7 +146,7 @@ public class GenPatterns {
     }
 
     private static void printLongCache() {
-        System.out.println("private static long[] lc = new long[]{");
+        System.out.println("private static final long[] lc = new long[]{");
 
         boolean first = true;
         for (int i = 0; i < longCache.size(); i++) {

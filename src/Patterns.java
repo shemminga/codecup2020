@@ -23,7 +23,7 @@ class Patterns {
         return new SjoerdsGomokuPlayer.Pattern(rf, ps, fi);
     }
 
-    private static long[] lc =
+    private static final long[] lc =
             new long[]{4503599627370496L, 0x800000000000000L, 9007199254740992L, 0x400000000000000L, 0x80000000000000L,
                     72057594037927936L, 0x200000000000000L, 0x40000000000000L, 0x8000000000000L, 0x1000000000000000L,
                     0x2000000000000000L, 0x4000000000000L, 2199023255552L, 33554432, 68719476736L, 1099511627776L,
@@ -196,9 +196,9 @@ class Patterns {
                     0x360000000000000L, 0x640000000000L, 1275068416, 47244640256L, 8162774324609024L,
                     0x220000000000000L, 0xe000000000000000L, 81604378624L, 281483566907400L, 0x8000400020001000L,
                     0x1000200040008000L, 0x8000400020001L};
-    final static SjoerdsGomokuPlayer.Pattern[] pat4 = new SjoerdsGomokuPlayer.Pattern[3360];
+    final SjoerdsGomokuPlayer.Pattern[] pat4 = new SjoerdsGomokuPlayer.Pattern[3360];
 
-    private static void initPat40() {
+    private void initPat40() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[30]), la0(lc[533]), 0), p(la0(lc[37]), la0(lc[608]), 16),
                 p(la0(lc[39]), la0(lc[557]), 32), p(la0(32768), la0(30720), 48), p(la1(lc[30]), la1(lc[533]), 64),
                 p(la1(lc[37]), la1(lc[608]), 80), p(la1(lc[39]), la1(lc[557]), 96), p(la1(32768), la1(30720), 112),
@@ -372,7 +372,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 0, arr.length);
     }
 
-    private static void initPat41() {
+    private void initPat41() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[7]), la1(lc[808]), 73), p(la1(lc[21]), la1(lc[777]), 89),
                 p(la1(4194304), la1(28311552), 105), p(la1(64), la1(432), 121), p(la2(lc[7]), la2(lc[808]), 137),
                 p(la2(lc[21]), la2(lc[777]), 153), p(la2(4194304), la2(28311552), 169), p(la2(64), la2(432), 185),
@@ -552,7 +552,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 500, arr.length);
     }
 
-    private static void initPat42() {
+    private void initPat42() {
         var arr =
                 new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[9]), la(0, lc[274], lc[9], 0), 67), p(la1(lc[26]), la(0, lc[77], lc[74], 0), 83),
                         p(la1(lc[28]), la(0, 4096, lc[226], 0), 99), p(la1(4096), la2(lc[643]), 115),
@@ -807,7 +807,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 1000, arr.length);
     }
 
-    private static void initPat43() {
+    private void initPat43() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(262144), la(lc[323], lc[11], 0, 0), 45), p(la0(4), la(lc[108], lc[46], 0, 0), 61),
                 p(la1(lc[11]), la(262148, lc[108], 0, 0), 77), p(la1(lc[31]), la(4, lc[345], 0, 0), 93),
                 p(la1(262144), la(0, lc[323], lc[11], 0), 109), p(la1(4), la(0, lc[108], lc[46], 0), 125),
@@ -1061,7 +1061,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 1500, arr.length);
     }
 
-    private static void initPat44() {
+    private void initPat44() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[6]), la(0, 0, lc[228], lc[2]), 134),
                 p(la2(lc[12]), la(0, 0, lc[40], lc[64]), 150), p(la2(lc[13]), la(0, 0, 256, lc[271]), 166),
                 p(la2(512), la3(lc[641]), 182), p(la0(lc[5]), la(lc[262], lc[0], 0, 0), 7),
@@ -1316,7 +1316,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 2000, arr.length);
     }
 
-    private static void initPat45() {
+    private void initPat45() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[1]), la1(lc[917]), 132), p(la2(lc[23]), la(0, lc[516], lc[9], 0), 148),
                 p(la2(lc[22]), la(0, lc[255], lc[203], 0), 164), p(la2(2048), la(0, 32768, lc[342], 0), 180),
                 p(la3(lc[1]), la2(lc[917]), 196), p(la3(lc[23]), la(0, 0, lc[516], lc[9]), 212),
@@ -1570,7 +1570,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 2500, arr.length);
     }
 
-    private static void initPat46() {
+    private void initPat46() {
         var arr =
                 new SjoerdsGomokuPlayer.Pattern[]{p(la0(8388608), la(lc[507], lc[6], 0, 0), 40), p(la0(128), la(lc[119], lc[71], 0, 0), 56),
                         p(la1(lc[4]), la(2097216, lc[99], 0, 0), 72), p(la1(lc[16]), la(32, lc[383], 0, 0), 88),
@@ -1755,9 +1755,9 @@ class Patterns {
         System.arraycopy(arr, 0, pat4, 3000, arr.length);
     }
 
-    final static SjoerdsGomokuPlayer.Pattern[] pat3 = new SjoerdsGomokuPlayer.Pattern[6720];
+    final SjoerdsGomokuPlayer.Pattern[] pat3 = new SjoerdsGomokuPlayer.Pattern[6720];
 
-    private static void initPat30() {
+    private void initPat30() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[715]), la0(lc[376]), 0, 1), p(la0(lc[706]), la0(lc[457]), 16, 17),
                 p(la0(lc[816]), la0(lc[478]), 32, 33), p(la0(49152), la0(14336), 48, 49),
                 p(la1(lc[715]), la1(lc[376]), 64, 65), p(la1(lc[706]), la1(lc[457]), 80, 81),
@@ -2011,7 +2011,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 0, arr.length);
     }
 
-    private static void initPat31() {
+    private void initPat31() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[628]), la1(lc[592]), 71, 74), p(la1(lc[568]), la1(lc[622]), 87, 90),
                 p(la1(18874368), la1(13631488), 103, 106), p(la1(288), la1(208), 119, 122),
                 p(la2(lc[628]), la2(lc[592]), 135, 138), p(la2(lc[568]), la2(lc[622]), 151, 154),
@@ -2265,7 +2265,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 500, arr.length);
     }
 
-    private static void initPat32() {
+    private void initPat32() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[387]), la2(lc[891]), 131, 133), p(la2(lc[369]), la2(lc[741]), 147, 149),
                 p(la2(lc[483]), la2(704643072), 163, 165), p(la2(5120), la2(10752), 179, 181),
                 p(la3(lc[387]), la3(lc[891]), 195, 197), p(la3(lc[369]), la3(lc[741]), 211, 213),
@@ -2519,7 +2519,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 1000, arr.length);
     }
 
-    private static void initPat33() {
+    private void initPat33() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la3(lc[299]), la3(lc[758]), 203, 204), p(la3(lc[311]), la3(lc[800]), 219, 220),
                 p(la3(1572864), la3(6553600), 235, 236), p(la3(24), la3(100), 251, 252),
                 p(la0(lc[362]), la0(lc[724]), 12, 13), p(la0(lc[389]), la0(lc[760]), 28, 29),
@@ -2771,7 +2771,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 1500, arr.length);
     }
 
-    private static void initPat34() {
+    private void initPat34() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[42]), la(0, 0, lc[76], lc[6]), 134, 150),
                 p(la2(lc[101]), la(0, 0, 512, lc[42]), 150, 166), p(la2(lc[76]), la3(lc[231]), 166, 182),
                 p(la(0, 0, 512, lc[6]), la3(lc[284]), 182, 198), p(la0(lc[67]), la(lc[65], lc[5], 0, 0), 7, 23),
@@ -3123,7 +3123,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 2000, arr.length);
     }
 
-    private static void initPat35() {
+    private void initPat35() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, lc[30], lc[30], 0), la1(lc[232]), 64, 128),
                 p(la(0, lc[37], lc[37], 0), la(0, lc[56], lc[30], 0), 80, 144),
                 p(la(0, lc[39], lc[39], 0), la(0, 32768, lc[53], 0), 96, 160),
@@ -3500,7 +3500,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 2500, arr.length);
     }
 
-    private static void initPat36() {
+    private void initPat36() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[144]), la(lc[174], lc[2], 0, 0), 26, 58),
                 p(la(2097152, lc[2], 0, 0), la(lc[144], lc[17], 0, 0), 42, 74),
                 p(la(32, lc[17], 0, 0), la(2097152, lc[174], 0, 0), 58, 90),
@@ -3884,7 +3884,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 3000, arr.length);
     }
 
-    private static void initPat37() {
+    private void initPat37() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[28], lc[9]), la2(lc[466]), 163, 195),
                 p(la(0, 0, 4096, lc[26]), la(0, 0, lc[123], lc[9]), 179, 211),
                 p(la3(lc[140]), la(0, 0, lc[77], lc[26]), 195, 227), p(la3(lc[198]), la(0, 0, 4096, lc[140]), 211, 243),
@@ -4179,7 +4179,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 3500, arr.length);
     }
 
-    private static void initPat38() {
+    private void initPat38() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[341]), la(0, lc[165], lc[3], 0), 65, 99),
                 p(la1(lc[291]), la(0, lc[33], lc[87], 0), 81, 115),
                 p(la(0, lc[35], lc[9], 0), la(0, 8192, lc[117], 0), 97, 131),
@@ -4558,7 +4558,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 4000, arr.length);
     }
 
-    private static void initPat39() {
+    private void initPat39() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[110]), la(lc[422], lc[0], 0, 0), 24, 41),
                 p(la0(8388672), la(lc[15], lc[68], 0, 0), 40, 57),
                 p(la(128, lc[7], 0, 0), la(lc[20], lc[120], 0, 0), 56, 73),
@@ -4940,7 +4940,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 4500, arr.length);
     }
 
-    private static void initPat310() {
+    private void initPat310() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[33], lc[1]), la2(lc[695]), 162, 196),
                 p(la(0, 0, 8192, lc[23]), la(0, 0, lc[445], lc[9]), 178, 212),
                 p(la3(lc[153]), la(0, 0, lc[255], lc[26]), 194, 228),
@@ -5248,7 +5248,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 5000, arr.length);
     }
 
-    private static void initPat311() {
+    private void initPat311() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[163]), la(0, lc[168], lc[6], 0), 74, 104),
                 p(la1(lc[180]), la(0, 4194304, lc[71], 0), 90, 120),
                 p(la(0, 2097152, lc[4], 0), la(0, 64, lc[99], 0), 106, 136),
@@ -5618,7 +5618,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 5500, arr.length);
     }
 
-    private static void initPat312() {
+    private void initPat312() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[464]), la(lc[181], lc[30], 0, 0), 19, 49),
                 p(la(lc[28], lc[24], 0, 0), la(lc[169], lc[37], 0, 0), 35, 65),
                 p(la(4096, lc[36], 0, 0), la(lc[22], lc[324], 0, 0), 51, 81),
@@ -5999,7 +5999,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 6000, arr.length);
     }
 
-    private static void initPat313() {
+    private void initPat313() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[20], lc[3]), la2(lc[327]), 167, 197),
                 p(la(0, 0, 256, lc[19]), la(0, 0, lc[121], lc[6]), 183, 213),
                 p(la3(lc[154]), la(0, 0, 4194432, lc[12]), 199, 229), p(la3(lc[166]), la(0, 0, 64, lc[179]), 215, 245),
@@ -6132,9 +6132,9 @@ class Patterns {
         System.arraycopy(arr, 0, pat3, 6500, arr.length);
     }
 
-    final static SjoerdsGomokuPlayer.Pattern[] pat2 = new SjoerdsGomokuPlayer.Pattern[6720];
+    final SjoerdsGomokuPlayer.Pattern[] pat2 = new SjoerdsGomokuPlayer.Pattern[6720];
 
-    private static void initPat20() {
+    private void initPat20() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[914]), la0(lc[313]), 0, 1, 2), p(la0(lc[709]), la0(lc[294]), 16, 17, 18),
                 p(la0(lc[781]), la0(lc[302]), 32, 33, 34), p(la0(57344), la0(6144), 48, 49, 50),
                 p(la1(lc[914]), la1(lc[313]), 64, 65, 66), p(la1(lc[709]), la1(lc[294]), 80, 81, 82),
@@ -6388,7 +6388,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 0, arr.length);
     }
 
-    private static void initPat21() {
+    private void initPat21() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[810]), la1(lc[316]), 71, 72, 75), p(la1(lc[872]), la1(lc[303]), 87, 88, 91),
                 p(la1(26214400), la1(6291456), 103, 104, 107), p(la1(400), la1(96), 119, 120, 123),
                 p(la2(lc[810]), la2(lc[316]), 135, 136, 139), p(la2(lc[872]), la2(lc[303]), 151, 152, 155),
@@ -6642,7 +6642,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 500, arr.length);
     }
 
-    private static void initPat22() {
+    private void initPat22() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[807]), la2(lc[313]), 130, 133, 134),
                 p(la2(lc[786]), la2(lc[294]), 146, 149, 150), p(la2(637534208), la2(lc[302]), 162, 165, 166),
                 p(la2(9728), la2(6144), 178, 181, 182), p(la3(lc[807]), la3(lc[313]), 194, 197, 198),
@@ -6897,7 +6897,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 1000, arr.length);
     }
 
-    private static void initPat23() {
+    private void initPat23() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la3(lc[538]), la3(lc[571]), 202, 203, 205),
                 p(la3(lc[588]), la3(lc[624]), 218, 219, 221), p(la3(3407872), la3(4718592), 234, 235, 237),
                 p(la3(52), la3(72), 250, 251, 253), p(la0(lc[617]), la0(lc[543]), 11, 12, 14),
@@ -7165,7 +7165,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 1500, arr.length);
     }
 
-    private static void initPat24() {
+    private void initPat24() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[231]), la(0, 0, 512, lc[6]), 134, 150, 166),
                 p(la2(lc[284]), la3(lc[42]), 150, 166, 182), p(la(0, 0, lc[76], lc[6]), la3(lc[101]), 166, 182, 198),
                 p(la(0, 0, 512, lc[42]), la3(lc[76]), 182, 198, 214), p(la0(lc[223]), la(256, lc[5], 0, 0), 7, 23, 39),
@@ -7617,7 +7617,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 2000, arr.length);
     }
 
-    private static void initPat25() {
+    private void initPat25() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[442]), la(0, lc[37], lc[30], 0), 64, 96, 112),
                 p(la(0, lc[178], lc[30], 0), la(0, lc[39], lc[37], 0), 80, 112, 128),
                 p(la(0, lc[39], lc[53], 0), la(0, 32768, lc[39], 0), 96, 128, 144),
@@ -8121,7 +8121,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 2500, arr.length);
     }
 
-    private static void initPat26() {
+    private void initPat26() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(lc[385], lc[2], 0, 0), la0(lc[107]), 10, 58, 74),
                 p(la(lc[17], lc[84], 0, 0), la0(2097184), 26, 74, 90),
                 p(la(2097152, lc[107], 0, 0), la(32, lc[2], 0, 0), 42, 90, 106),
@@ -8603,7 +8603,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 3000, arr.length);
     }
 
-    private static void initPat27() {
+    private void initPat27() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[198], lc[9]), la2(lc[140]), 147, 179, 195),
                 p(la(0, 0, lc[28], lc[74]), la2(lc[198]), 163, 195, 211),
                 p(la(0, 0, 4096, lc[123]), la(0, 0, lc[28], lc[9]), 179, 211, 227),
@@ -8994,7 +8994,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 3500, arr.length);
     }
 
-    private static void initPat28() {
+    private void initPat28() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[338]), la(0, lc[28], lc[3], 0), 65, 82, 116),
                 p(la(0, lc[286], lc[1], 0), la(0, 4096, lc[19], 0), 81, 98, 132),
                 p(la(0, lc[128], lc[23], 0), la2(lc[205]), 97, 114, 148),
@@ -9498,7 +9498,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 4000, arr.length);
     }
 
-    private static void initPat29() {
+    private void initPat29() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(lc[139], lc[0], 0, 0), la0(lc[201]), 7, 41, 75),
                 p(la(lc[149], lc[14], 0, 0), la(8388608, lc[2], 0, 0), 23, 57, 91),
                 p(la(lc[20], lc[208], 0, 0), la(128, lc[17], 0, 0), 39, 73, 107),
@@ -9988,7 +9988,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 4500, arr.length);
     }
 
-    private static void initPat210() {
+    private void initPat210() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[291], lc[1]), la2(lc[638]), 145, 179, 196),
                 p(la(0, 0, lc[35], lc[54]), la2(lc[346]), 161, 195, 212),
                 p(la(0, 0, 16384, lc[113]), la(0, 0, lc[39], lc[10]), 177, 211, 228),
@@ -10396,7 +10396,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 5000, arr.length);
     }
 
-    private static void initPat211() {
+    private void initPat211() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[507]), la(0, 8388608, lc[6], 0), 74, 89, 119),
                 p(la(0, lc[119], lc[5], 0), la(0, 128, lc[12], 0), 90, 105, 135),
                 p(la(0, 2097216, lc[15], 0), la2(lc[179]), 106, 121, 151),
@@ -10900,7 +10900,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 5500, arr.length);
     }
 
-    private static void initPat212() {
+    private void initPat212() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(lc[433], lc[30], 0, 0), la0(lc[190]), 4, 49, 64),
                 p(la(lc[23], lc[263], 0, 0), la0(lc[202]), 20, 65, 80),
                 p(la(lc[22], lc[356], 0, 0), la(4096, lc[10], 0, 0), 36, 81, 96),
@@ -11390,7 +11390,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 6000, arr.length);
     }
 
-    private static void initPat213() {
+    private void initPat213() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, 0, lc[143], lc[3]), la2(lc[171]), 152, 182, 197),
                 p(la(0, 0, 8388608, lc[62]), la2(lc[168]), 168, 198, 213),
                 p(la(0, 0, 128, lc[109]), la(0, 0, 4194304, lc[5]), 184, 214, 229),
@@ -11571,9 +11571,9 @@ class Patterns {
         System.arraycopy(arr, 0, pat2, 6500, arr.length);
     }
 
-    final static SjoerdsGomokuPlayer.Pattern[] pat1 = new SjoerdsGomokuPlayer.Pattern[3360];
+    final SjoerdsGomokuPlayer.Pattern[] pat1 = new SjoerdsGomokuPlayer.Pattern[3360];
 
-    private static void initPat10() {
+    private void initPat10() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[714]), la0(lc[1]), 0, 1, 2, 3), p(la0(lc[702]), la0(lc[23]), 16, 17, 18, 19),
                 p(la0(lc[828]), la0(lc[22]), 32, 33, 34, 35), p(la0(61440), la0(2048), 48, 49, 50, 51),
                 p(la1(lc[714]), la1(lc[1]), 64, 65, 66, 67), p(la1(lc[702]), la1(lc[23]), 80, 81, 82, 83),
@@ -11827,7 +11827,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 0, arr.length);
     }
 
-    private static void initPat11() {
+    private void initPat11() {
         var arr =
                 new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[808]), la1(lc[7]), 71, 72, 74, 75), p(la1(lc[777]), la1(lc[21]), 87, 88, 90, 91),
                         p(la1(28311552), la1(4194304), 103, 104, 106, 107), p(la1(432), la1(64), 119, 120, 122, 123),
@@ -12160,7 +12160,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 500, arr.length);
     }
 
-    private static void initPat12() {
+    private void initPat12() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la1(lc[643]), la2(lc[9]), 67, 83, 99, 115),
                 p(la(0, lc[274], lc[9], 0), la2(lc[26]), 83, 99, 115, 131),
                 p(la(0, lc[77], lc[74], 0), la2(lc[28]), 99, 115, 131, 147),
@@ -12633,7 +12633,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 1000, arr.length);
     }
 
-    private static void initPat13() {
+    private void initPat13() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(lc[323], lc[11], 0, 0), la0(262144), 13, 29, 61, 77),
                 p(la(lc[108], lc[46], 0, 0), la0(4), 29, 45, 77, 93),
                 p(la(262148, lc[108], 0, 0), la1(lc[11]), 45, 61, 93, 109),
@@ -13089,7 +13089,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 1500, arr.length);
     }
 
-    private static void initPat14() {
+    private void initPat14() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la2(lc[674]), la3(lc[2]), 134, 151, 168, 185),
                 p(la(0, 0, lc[245], lc[7]), la3(lc[17]), 150, 167, 184, 201),
                 p(la(0, 0, lc[60], lc[85]), la3(2097152), 166, 183, 200, 217),
@@ -13578,7 +13578,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 2000, arr.length);
     }
 
-    private static void initPat15() {
+    private void initPat15() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(0, lc[318], lc[1], 0), la1(lc[30]), 81, 98, 115, 132),
                 p(la(0, lc[128], lc[54], 0), la1(lc[37]), 97, 114, 131, 148),
                 p(la(0, 16384, lc[279], 0), la1(lc[39]), 113, 130, 147, 164),
@@ -14030,7 +14030,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 2500, arr.length);
     }
 
-    private static void initPat16() {
+    private void initPat16() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la(lc[507], lc[6], 0, 0), la0(8388608), 10, 25, 55, 70),
                 p(la(lc[119], lc[71], 0, 0), la0(128), 26, 41, 71, 86),
                 p(la(2097216, lc[99], 0, 0), la1(lc[4]), 42, 57, 87, 102),
@@ -14368,9 +14368,7 @@ class Patterns {
         System.arraycopy(arr, 0, pat1, 3000, arr.length);
     }
 
-    static { init(); }
-
-    static void init() {
+    Patterns() {
         initPat40();
         initPat41();
         initPat42();

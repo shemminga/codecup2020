@@ -9,8 +9,6 @@ public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
     private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
-    private static final SjoerdsGomokuPlayer.MoveGenerator MOVE_GENERATOR =
-            new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, GENERATION_ANALYZER);
 
     public static void main(String[] args) throws IOException {
         DBG_PRINTER.printMoves = true;
@@ -19,7 +17,7 @@ public class SjoerdsGomokuPlayerTest {
         DBG_PRINTER.printMove("Opening 3", "Kh", MOVE_CONVERTER.toMove(167));
         DBG_PRINTER.printMoves = false;
         // Warm-up loading patterns and such
-        MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
+        //MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
 
         //System.out.println("Waiting for enter");
         //System.in.read();
@@ -86,12 +84,15 @@ public class SjoerdsGomokuPlayerTest {
 
     private static void testMoveGen(final String desc, final String expectedMove,
             final SjoerdsGomokuPlayer.Board board) {
-        Patterns.init();
+        final SjoerdsGomokuPlayer.MoveGenerator generator =
+                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, GENERATION_ANALYZER);
         SjoerdsGomokuPlayer.Timer.generatedMoves = 0;
         SjoerdsGomokuPlayer.Timer.boardsScored = 0;
+
         final long start = System.nanoTime();
-        final SjoerdsGomokuPlayer.Move move = MOVE_GENERATOR.generateMove(board);
+        final SjoerdsGomokuPlayer.Move move = generator.generateMove(board);
         final long end = System.nanoTime();
+
         expect(board.copy().apply(move), expectedMove, toString(move), desc);
 
         System.out.printf("Generated moves: %d, boards scored: %d\n", SjoerdsGomokuPlayer.Timer.generatedMoves,
