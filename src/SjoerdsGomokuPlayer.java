@@ -442,6 +442,9 @@ public class SjoerdsGomokuPlayer {
 
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
         private static final int[] NIL_COUNTS = new int[256];
+        protected static final int MAX_SCORE = Integer.MAX_VALUE;
+        protected static final int MIN_SCORE = -MAX_SCORE;
+        protected static final int UNCERTAINTY = 21474836;
 
         private final MoveConverter moveConverter;
         private final DbgPrinter dbgPrinter;
@@ -467,8 +470,7 @@ public class SjoerdsGomokuPlayer {
 
             debugAnalyzer.reset();
             final int[] fieldIdxAndScore =
-                    minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, Integer.MIN_VALUE,
-                            Integer.MAX_VALUE);
+                    minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, MIN_SCORE, MAX_SCORE);
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
@@ -493,7 +495,7 @@ public class SjoerdsGomokuPlayer {
 
             final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
             if (immediateWin >= 0) {
-                final int[] ints = fieldIdxAndScore(immediateWin, isPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE);
+                final int[] ints = fieldIdxAndScore(immediateWin, isPlayer ? MAX_SCORE : MIN_SCORE);
                 debugAnalyzer.setScore(ints[SCORE]);
                 return ints;
             }
@@ -510,7 +512,7 @@ public class SjoerdsGomokuPlayer {
 
             final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1, level);
             Timer.generatedMoves += moves.size();
-            int[] retval = new int[]{moves.get(0), isPlayer ? Integer.MIN_VALUE : Integer.MAX_VALUE};
+            int[] retval = new int[]{moves.get(0), isPlayer ? MIN_SCORE : MAX_SCORE};
             for (int move : moves) {
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
@@ -638,52 +640,83 @@ public class SjoerdsGomokuPlayer {
                 final int[][] match2, final int[][] match1) {
             Timer.boardsScored++;
 
-            if (isPlayer) {
-                if (256 - countMatches(match4[PLAYER], 0) > 0) {
-                    return Integer.MAX_VALUE - 20; // As good as won.
-                }
-            } else {
-                if (256 - countMatches(match4[OPPONENT], 0) > 0) {
-                    return Integer.MIN_VALUE + 21; // As good as lost.
-                }
-            }
+            int playerToMoveFactor = isPlayer ? 1 : -1;
+            int onMove = isPlayer ? PLAYER : OPPONENT;
+            int offMove = isPlayer ? OPPONENT : PLAYER;
 
-            int[] mostValuableFieldValue = {-1, -1};
-            int[] totalFieldValues = {0, 0};
+            int[][] winCounts = new int[2][5];
+            int[][] opportunityCounts = new int[2][5];
+
             for (int i = 0; i < 256; i++) {
-                int[] values = {
-                        match3[PLAYER  ][i] * 20 * 20 + match2[PLAYER  ][i] * 20 + match1[PLAYER  ][i],
-                        match3[OPPONENT][i] * 20 * 20 + match2[OPPONENT][i] * 20 + match1[OPPONENT][i]
-                };
-
-                if (values[PLAYER] > mostValuableFieldValue[PLAYER]) {
-                    mostValuableFieldValue[PLAYER] = values[PLAYER];
-                }
-                if (values[OPPONENT] > mostValuableFieldValue[OPPONENT]) {
-                    mostValuableFieldValue[OPPONENT] = values[OPPONENT];
+                // There's an immediate win.
+                if (match4[onMove][i] >= 1) {
+                    return playerToMoveFactor * MAX_SCORE;
                 }
 
-                totalFieldValues[PLAYER] += values[PLAYER];
-                totalFieldValues[OPPONENT] += values[OPPONENT];
-            }
-
-            if (isPlayer) {
-                totalFieldValues[PLAYER] += mostValuableFieldValue[PLAYER];
-            } else {
-                totalFieldValues[OPPONENT] += mostValuableFieldValue[OPPONENT];
-            }
-
-            return totalFieldValues[PLAYER] - totalFieldValues[OPPONENT];
-        }
-
-        private static int countMatches(int[] matches, int value) {
-            int count = 0;
-            for (final int match : matches) {
-                if (match == value) {
-                    count++;
+                if (match4[offMove][i] >= 1) {
+                    winCounts[offMove][4]++;
                 }
+
+                if (match3[onMove][i] >= 2) {
+                    // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
+                    winCounts[onMove][3]++;
+                } else if (match3[onMove][i] == 1 && match2[onMove][i] >= 3) {
+                    // Create a 4 and an open 3.
+                    winCounts[onMove][2]++;
+                }
+
+                if (match3[offMove][i] >= 2) {
+                    // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
+                    winCounts[offMove][3]++;
+                } else if (match3[offMove][i] == 1 && match2[offMove][i] >= 3) {
+                    // Create a 4 and an open 3.
+                    winCounts[offMove][2]++;
+                }
+
+                if (match2[onMove][i] >= 4) {
+                    winCounts[onMove][2]++;
+                }
+
+                if (match2[offMove][i] >= 4) {
+                    winCounts[offMove][2]++;
+                }
+
+                opportunityCounts[onMove][1] += match1[onMove][i];
+                opportunityCounts[onMove][2] += match2[onMove][i];
+                opportunityCounts[onMove][3] += match3[onMove][i];
+                opportunityCounts[onMove][4] += match4[onMove][i];
+
+                opportunityCounts[offMove][1] += match1[offMove][i];
+                opportunityCounts[offMove][2] += match2[offMove][i];
+                opportunityCounts[offMove][3] += match3[offMove][i];
+                opportunityCounts[offMove][4] += match4[offMove][i];
             }
-            return count;
+
+            // Two immediate wins for the opponent. Can't block that.
+            if (winCounts[offMove][4] >= 2) {
+                return playerToMoveFactor * MIN_SCORE;
+            }
+
+            if (winCounts[onMove][3] >= 1) {
+                return playerToMoveFactor * (MAX_SCORE - 1 - UNCERTAINTY);
+            }
+
+            if (winCounts[offMove][3] >= 2) {
+                return playerToMoveFactor * (MIN_SCORE + 1 + UNCERTAINTY);
+            }
+
+            if (winCounts[onMove][2] >= 1) {
+                return playerToMoveFactor * (MAX_SCORE - 1 - 2*UNCERTAINTY);
+            }
+
+            if (winCounts[offMove][2] >= 2) {
+                return playerToMoveFactor * (MIN_SCORE + 1 + 2*UNCERTAINTY);
+            }
+
+            return (opportunityCounts[onMove][4] - Math.max(opportunityCounts[offMove][4] - 1, 0)) * 100_000 +
+                    (opportunityCounts[onMove][3] - Math.max(opportunityCounts[offMove][3] - 1, 0)) * 10_000 +
+                    (opportunityCounts[onMove][2] - Math.max(opportunityCounts[offMove][2] - 1, 0)) * 100 +
+                    (opportunityCounts[onMove][1] - Math.max(opportunityCounts[offMove][1] - 1, 0));
         }
 
         private static int[] fieldIdxAndScore(int fieldIdx, int score) {

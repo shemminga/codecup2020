@@ -46,7 +46,7 @@ public class SjoerdsGomokuPlayerTest {
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
-        testMoveGen("Block double closed 3", "Em", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+        testMoveGen("Block double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 
