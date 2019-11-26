@@ -1,4 +1,6 @@
-class Patterns {
+import java.io.Serializable;
+
+class Patterns implements Serializable {
     private static long[] la(long... ls) {
         return ls;
     }

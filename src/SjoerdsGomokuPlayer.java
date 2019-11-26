@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -397,7 +398,7 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    static class Pattern {
+    static class Pattern implements Serializable {
         final long[] emptyFields;
         final long[] playerStones;
         final int[] fieldIdxs;
