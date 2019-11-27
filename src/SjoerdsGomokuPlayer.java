@@ -786,24 +786,22 @@ public class SjoerdsGomokuPlayer {
                         (board.playerStones[1] & p.playerStones[1]) == p.playerStones[1] &&
                         (board.playerStones[2] & p.playerStones[2]) == p.playerStones[2] &&
                         (board.playerStones[3] & p.playerStones[3]) == p.playerStones[3]) {
-                    countPossibleMoves(possibleMoves[PLAYER], p);
+                    for (int fieldIdx : p.fieldIdxs) {
+                        possibleMoves[PLAYER][fieldIdx]++;
+                    }
                 }
 
                 if ((board.opponentStones[0] & p.playerStones[0]) == p.playerStones[0] &&
                         (board.opponentStones[1] & p.playerStones[1]) == p.playerStones[1] &&
                         (board.opponentStones[2] & p.playerStones[2]) == p.playerStones[2] &&
                         (board.opponentStones[3] & p.playerStones[3]) == p.playerStones[3]) {
-                    countPossibleMoves(possibleMoves[OPPONENT], p);
+                    for (int fieldIdx : p.fieldIdxs) {
+                        possibleMoves[OPPONENT][fieldIdx]++;
+                    }
                 }
             }
 
             return possibleMoves;
-        }
-
-        private static void countPossibleMoves(final int[] possibleMove, final Pattern p) {
-            for (int fieldIdx : p.fieldIdxs) {
-                possibleMove[fieldIdx]++;
-            }
         }
     }
 
