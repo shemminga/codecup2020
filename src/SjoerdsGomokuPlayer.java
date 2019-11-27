@@ -764,6 +764,11 @@ public class SjoerdsGomokuPlayer {
         private static int[][] match(final Board board, final Pattern[] patterns, final boolean removeUnneeded) {
             final int[][] possibleMoves = new int[2][256];
 
+            long[] nPS = new long[]{~board.playerStones[0], ~board.playerStones[1], ~board.playerStones[2],
+                    ~board.playerStones[3]};
+            long[] nOS = new long[]{~board.opponentStones[0], ~board.opponentStones[1], ~board.opponentStones[2],
+                    ~board.opponentStones[3]};
+
             for (int i = 0; i < patterns.length; i++) {
                 final Pattern p = patterns[i];
                 if (p == null) {
@@ -782,19 +787,19 @@ public class SjoerdsGomokuPlayer {
                     continue;
                 }
 
-                if ((board.playerStones[0] & p.playerStones[0]) == p.playerStones[0] &&
-                        (board.playerStones[1] & p.playerStones[1]) == p.playerStones[1] &&
-                        (board.playerStones[2] & p.playerStones[2]) == p.playerStones[2] &&
-                        (board.playerStones[3] & p.playerStones[3]) == p.playerStones[3]) {
+                if (((nPS[0] & p.playerStones[0]) |
+                        (nPS[1] & p.playerStones[1]) |
+                        (nPS[2] & p.playerStones[2]) |
+                        (nPS[3] & p.playerStones[3])) == 0) {
                     for (int fieldIdx : p.fieldIdxs) {
                         possibleMoves[PLAYER][fieldIdx]++;
                     }
                 }
 
-                if ((board.opponentStones[0] & p.playerStones[0]) == p.playerStones[0] &&
-                        (board.opponentStones[1] & p.playerStones[1]) == p.playerStones[1] &&
-                        (board.opponentStones[2] & p.playerStones[2]) == p.playerStones[2] &&
-                        (board.opponentStones[3] & p.playerStones[3]) == p.playerStones[3]) {
+                if (((nOS[0] & p.playerStones[0]) |
+                        (nOS[1] & p.playerStones[1]) |
+                        (nOS[2] & p.playerStones[2]) |
+                        (nOS[3] & p.playerStones[3])) == 0) {
                     for (int fieldIdx : p.fieldIdxs) {
                         possibleMoves[OPPONENT][fieldIdx]++;
                     }
