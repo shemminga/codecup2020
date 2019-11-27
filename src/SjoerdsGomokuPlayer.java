@@ -769,16 +769,21 @@ public class SjoerdsGomokuPlayer {
             long[] nOS = new long[]{~board.opponentStones[0], ~board.opponentStones[1], ~board.opponentStones[2],
                     ~board.opponentStones[3]};
 
+            long[] occFlds = new long[]{(board.playerStones[0] | board.opponentStones[0]),
+                    (board.playerStones[1] | board.opponentStones[1]),
+                    (board.playerStones[2] | board.opponentStones[2]),
+                    (board.playerStones[3] | board.opponentStones[3])};
+
             for (int i = 0; i < patterns.length; i++) {
                 final Pattern p = patterns[i];
                 if (p == null) {
                     continue;
                 }
 
-                if (((board.playerStones[0] | board.opponentStones[0]) & p.emptyFields[0] |
-                        (board.playerStones[1] | board.opponentStones[1]) & p.emptyFields[1] |
-                        (board.playerStones[2] | board.opponentStones[2]) & p.emptyFields[2] |
-                        (board.playerStones[3] | board.opponentStones[3]) & p.emptyFields[3]) != 0) {
+                if (((occFlds[0] & p.emptyFields[0]) |
+                        (occFlds[1] & p.emptyFields[1]) |
+                        (occFlds[2] & p.emptyFields[2]) |
+                        (occFlds[3] & p.emptyFields[3])) != 0) {
                     if (removeUnneeded) {
                         // These won't ever match again, because a field that is required to be empty has been filled.
                         // Only do this for the top-level minimax, obviously.
