@@ -524,7 +524,7 @@ public class SjoerdsGomokuPlayer {
             if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
             CalcResult calcResult = calcCache.get(board);
 
-            if (calcResult.match4 == null)  calcResult.match4 = match(board, patterns.pat4, level == 1);
+            if (calcResult.match4 == null)  calcResult.match4 = match(board, patterns.pat4);
 
             if (calcResult.immediateWin == CalcResult.UNKNOWN)
                 calcResult.immediateWin = Arrays.mismatch(calcResult.match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
@@ -535,9 +535,9 @@ public class SjoerdsGomokuPlayer {
                 return ints;
             }
 
-            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3, level == 1);
-            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2, level == 1);
-            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1, level == 1);
+            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
+            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
+            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
 
             if (searchDepth <= 0) {
                 final int score = scoreBoard(isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1);
@@ -761,7 +761,7 @@ public class SjoerdsGomokuPlayer {
             return new int[]{fieldIdx, score};
         }
 
-        private static int[][] match(final Board board, final Pattern[] patterns, final boolean removeUnneeded) {
+        private static int[][] match(final Board board, final Pattern[] patterns) {
             final int[][] possibleMoves = new int[2][256];
 
             long[] nPS = new long[]{~board.playerStones[0], ~board.playerStones[1], ~board.playerStones[2],
@@ -774,36 +774,20 @@ public class SjoerdsGomokuPlayer {
                     (board.playerStones[2] | board.opponentStones[2]),
                     (board.playerStones[3] | board.opponentStones[3])};
 
-            for (int i = 0; i < patterns.length; i++) {
-                final Pattern p = patterns[i];
-                if (p == null) {
+            for (final Pattern p : patterns) {
+                if (((occFlds[0] & p.emptyFields[0]) | (occFlds[1] & p.emptyFields[1]) |
+                        (occFlds[2] & p.emptyFields[2]) | (occFlds[3] & p.emptyFields[3])) != 0) {
                     continue;
                 }
 
-                if (((occFlds[0] & p.emptyFields[0]) |
-                        (occFlds[1] & p.emptyFields[1]) |
-                        (occFlds[2] & p.emptyFields[2]) |
-                        (occFlds[3] & p.emptyFields[3])) != 0) {
-                    if (removeUnneeded) {
-                        // These won't ever match again, because a field that is required to be empty has been filled.
-                        // Only do this for the top-level minimax, obviously.
-                        patterns[i] = null;
-                    }
-                    continue;
-                }
-
-                if (((nPS[0] & p.playerStones[0]) |
-                        (nPS[1] & p.playerStones[1]) |
-                        (nPS[2] & p.playerStones[2]) |
+                if (((nPS[0] & p.playerStones[0]) | (nPS[1] & p.playerStones[1]) | (nPS[2] & p.playerStones[2]) |
                         (nPS[3] & p.playerStones[3])) == 0) {
                     for (int fieldIdx : p.fieldIdxs) {
                         possibleMoves[PLAYER][fieldIdx]++;
                     }
                 }
 
-                if (((nOS[0] & p.playerStones[0]) |
-                        (nOS[1] & p.playerStones[1]) |
-                        (nOS[2] & p.playerStones[2]) |
+                if (((nOS[0] & p.playerStones[0]) | (nOS[1] & p.playerStones[1]) | (nOS[2] & p.playerStones[2]) |
                         (nOS[3] & p.playerStones[3])) == 0) {
                     for (int fieldIdx : p.fieldIdxs) {
                         possibleMoves[OPPONENT][fieldIdx]++;
