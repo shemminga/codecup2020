@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +29,18 @@ public class DotGenerationAnalyzer implements SjoerdsGomokuPlayer.GenerationAnal
 
     @Override
     public void selectCurrentMove(final int move) {
+        if (current.children == null) {
+            current.children = new ArrayList<>();
+        }
+
         current = current.children.stream()
                 .filter(node -> node.move == move)
                 .findAny()
-                .orElseThrow();
+                .orElseGet(() -> {
+                    final DotNode newNode = new DotNode(move, current, "FROM CACHE");
+                    current.children.add(newNode);
+                    return newNode;
+                });
     }
 
     @Override

@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -355,6 +356,32 @@ public class SjoerdsGomokuPlayer {
 
             return (results[0] | results[1] | results[2] | results[3]) == 0;
         }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            final Board board = (Board) o;
+            return playerToMove == board.playerToMove && moves == board.moves &&
+                    playerStones[0] == board.playerStones[0] && playerStones[1] == board.playerStones[1] &&
+                    playerStones[2] == board.playerStones[2] && playerStones[3] == board.playerStones[3] &&
+                    opponentStones[0] == board.opponentStones[0] && opponentStones[1] == board.opponentStones[1] &&
+                    opponentStones[2] == board.opponentStones[2] && opponentStones[3] == board.opponentStones[3];
+        }
+
+        @Override
+        public int hashCode() {
+            int result = playerToMove;
+            result = 31 * result + (int) (playerStones[0] ^ (playerStones[0] >>> 32));
+            result = 31 * result + (int) (playerStones[1] ^ (playerStones[1] >>> 32));
+            result = 31 * result + (int) (playerStones[2] ^ (playerStones[2] >>> 32));
+            result = 31 * result + (int) (playerStones[3] ^ (playerStones[3] >>> 32));
+            result = 31 * result + (int) (opponentStones[0] ^ (opponentStones[0] >>> 32));
+            result = 31 * result + (int) (opponentStones[1] ^ (opponentStones[1] >>> 32));
+            result = 31 * result + (int) (opponentStones[2] ^ (opponentStones[2] >>> 32));
+            result = 31 * result + (int) (opponentStones[3] ^ (opponentStones[3] >>> 32));
+            result = 31 * result + moves;
+            return result;
+        }
     }
 
     static class DbgPrinter {
@@ -452,6 +479,7 @@ public class SjoerdsGomokuPlayer {
         private final GenerationAnalyzer debugAnalyzer;
 
         private final Patterns patterns = new Patterns();
+        private final Map<Board, CalcResult> calcCache = new HashMap<>(100_000, 1.0f);
 
         PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter) {
             this(moveConverter, dbgPrinter, new DummyGenerationAnalyzer());
@@ -472,6 +500,7 @@ public class SjoerdsGomokuPlayer {
             debugAnalyzer.reset();
             final int[] fieldIdxAndScore =
                     minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, MIN_SCORE, MAX_SCORE);
+            System.err.println("Board cache size: " + calcCache.size());
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
@@ -492,29 +521,37 @@ public class SjoerdsGomokuPlayer {
         }
 
         private int[] minimax(Board board, int searchDepth, int level, boolean isPlayer, int alpha, int beta) {
-            final int[][] match4 = match(board, patterns.pat4, level == 1);
+            if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
+            CalcResult calcResult = calcCache.get(board);
 
-            final int immediateWin = Arrays.mismatch(match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
-            if (immediateWin >= 0) {
-                final int[] ints = fieldIdxAndScore(immediateWin, isPlayer ? MAX_SCORE : MIN_SCORE);
+            if (calcResult.match4 == null)  calcResult.match4 = match(board, patterns.pat4, level == 1);
+
+            if (calcResult.immediateWin == CalcResult.UNKNOWN)
+                calcResult.immediateWin = Arrays.mismatch(calcResult.match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
+
+            if (calcResult.immediateWin >= 0) {
+                final int[] ints = fieldIdxAndScore(calcResult.immediateWin, isPlayer ? MAX_SCORE : MIN_SCORE);
                 debugAnalyzer.setScore(ints[SCORE]);
                 return ints;
             }
 
-            final int[][] match3 = match(board, patterns.pat3, level == 1);
-            final int[][] match2 = match(board, patterns.pat2, level == 1);
-            final int[][] match1 = match(board, patterns.pat1, level == 1);
+            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3, level == 1);
+            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2, level == 1);
+            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1, level == 1);
 
             if (searchDepth <= 0) {
-                final int score = scoreBoard(isPlayer, match4, match3, match2, match1);
+                final int score = scoreBoard(isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1);
                 debugAnalyzer.setScore(score);
                 return new int[]{-1, score};
             }
 
-            final List<Integer> moves = listTopMoves(board, isPlayer, match4, match3, match2, match1, level);
-            Timer.generatedMoves += moves.size();
-            int[] retval = new int[]{moves.get(0), isPlayer ? MIN_SCORE : MAX_SCORE};
-            for (int move : moves) {
+            if (calcResult.moves == null) {
+                calcResult.moves = listTopMoves(board, isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1, level);
+                Timer.generatedMoves += calcResult.moves.size();
+            }
+
+            int[] retval = new int[]{calcResult.moves.get(0), isPlayer ? MIN_SCORE : MAX_SCORE};
+            for (int move : calcResult.moves) {
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
                 debugAnalyzer.selectCurrentMove(move);
@@ -768,6 +805,17 @@ public class SjoerdsGomokuPlayer {
                 possibleMove[fieldIdx]++;
             }
         }
+    }
+
+    static class CalcResult {
+        public static final int UNKNOWN = -2;
+        public static final int NO = -1;
+        int[][] match4;
+        int[][] match3;
+        int[][] match2;
+        int[][] match1;
+        int immediateWin = UNKNOWN;
+        List<Integer> moves;
     }
 
 //@formatter:off
