@@ -2,17 +2,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.List;
 
 class Judge {
     private final PlayerPipes player1Pipes;
     private final PlayerPipes player2Pipes;
     private final JudgeBoard board = new JudgeBoard();
-    private final JudgeDumper judgeDumper;
+    private final List<String> moves = new ArrayList<>();
 
     Judge(final PlayerPipes player1Pipes, final PlayerPipes player2Pipes) {
         this.player1Pipes = player1Pipes;
         this.player2Pipes = player2Pipes;
-        judgeDumper = new JudgeDumper(player1Pipes.err.readEnd, player2Pipes.err.readEnd);
+        JudgeDumper.sinkStreams(player1Pipes.err.readEnd, player2Pipes.err.readEnd);
     }
 
     void play() {
@@ -40,25 +42,27 @@ class Judge {
         player1Pipes.in.writeEnd.println("Quit");
         player2Pipes.in.writeEnd.println("Quit");
 
-        judgeDumper.printResult(board);
+        JudgeDumper.printResult(board);
+        JudgeDumper.printAllMoves(moves);
     }
 
     private void processMove(InputStream in, PrintStream out) {
         final String move = readMove(in);
+        moves.add(move);
         board.move(move);
 
-        judgeDumper.printMove(move, board);
+        JudgeDumper.printMove(move, board);
 
         out.println(move);
     }
 
-    private String readMove(InputStream in) {
+    private static String readMove(InputStream in) {
         final int rowInt = robustRead(in);
         final int colInt = robustRead(in);
         return (char) rowInt + "" + (char) colInt;
     }
 
-    private int robustRead(InputStream in) {
+    private static int robustRead(InputStream in) {
         try {
             int val;
 

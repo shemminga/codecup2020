@@ -202,34 +202,6 @@ public class GenPatterns {
         });
     }
 
-    private static void print(GenPattern gp) {
-        final JudgeBoard judgeBoard = new JudgeBoard();
-
-        Stream.of(gp.moves)
-                .forEach(move -> {
-                    judgeBoard.move(move);
-                    judgeBoard.playerToMove = JudgeBoard.Stone.WHITE;
-                });
-
-        StringBuilder sb = new StringBuilder();
-        JudgeDumper.printBoard(judgeBoard, sb);
-        String movesBoard = sb.toString();
-
-        final JudgeBoard responseJB = new JudgeBoard();
-        responseJB.move(gp.emptyFields.get(0));
-
-        StringBuilder rsb = new StringBuilder();
-        JudgeDumper.printBoard(responseJB, rsb);
-        String responseBoard = rsb.toString();
-
-        final List<String> mbl = movesBoard.lines().collect(Collectors.toList());
-        final List<String> rbl = responseBoard.lines().collect(Collectors.toList());
-
-        for (int i = 0; i < mbl.size(); i++) {
-            System.out.println(mbl.get(i).strip() + "     " + rbl.get(i).strip());
-        }
-    }
-
     private static String patternToString(SjoerdsGomokuPlayer.Pattern pattern) {
         StringBuilder sb = new StringBuilder();
 

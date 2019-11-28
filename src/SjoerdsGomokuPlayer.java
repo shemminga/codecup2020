@@ -313,10 +313,10 @@ public class SjoerdsGomokuPlayer {
         }
 
         Board apply(Move move) {
-            moves++;
             if (move == Move.SWITCH) {
                 return flip();
             }
+            moves++;
 
             long[] updatee = playerToMove == PLAYER ? playerStones : opponentStones;
 
@@ -361,7 +361,7 @@ public class SjoerdsGomokuPlayer {
         public boolean equals(final Object o) {
             if (this == o) return true;
             final Board board = (Board) o;
-            return playerToMove == board.playerToMove && moves == board.moves &&
+            return playerToMove == board.playerToMove &&
                     playerStones[0] == board.playerStones[0] && playerStones[1] == board.playerStones[1] &&
                     playerStones[2] == board.playerStones[2] && playerStones[3] == board.playerStones[3] &&
                     opponentStones[0] == board.opponentStones[0] && opponentStones[1] == board.opponentStones[1] &&
@@ -379,7 +379,6 @@ public class SjoerdsGomokuPlayer {
             result = 31 * result + (int) (opponentStones[1] ^ (opponentStones[1] >>> 32));
             result = 31 * result + (int) (opponentStones[2] ^ (opponentStones[2] >>> 32));
             result = 31 * result + (int) (opponentStones[3] ^ (opponentStones[3] >>> 32));
-            result = 31 * result + moves;
             return result;
         }
     }
@@ -500,7 +499,7 @@ public class SjoerdsGomokuPlayer {
             debugAnalyzer.reset();
             final int[] fieldIdxAndScore =
                     minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, MIN_SCORE, MAX_SCORE);
-            System.err.println("Board cache size: " + calcCache.size());
+            dbgPrinter.log("Board cache size: " + calcCache.size());
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 

@@ -1,12 +1,13 @@
 import java.util.Arrays;
 
+@SuppressWarnings("RedundantIfStatement")
 class JudgeBoard {
     static final int BOARD_SIZE = 16;
     boolean isGameEnded = false;
     GameResult gameResult = GameResult.INDETERMINATE;
     Stone playerToMove = Stone.WHITE;
     int moveNumber = 0;
-    private Stone[][] board = new Stone[BOARD_SIZE][BOARD_SIZE];
+    private final Stone[][] board = new Stone[BOARD_SIZE][BOARD_SIZE];
 
     JudgeBoard() {
         for (final Stone[] stones : board)
@@ -15,7 +16,6 @@ class JudgeBoard {
 
     void move(String inputMove) {
         moveNumber++;
-        togglePlayerToMove();
 
         final String move = inputMove.trim();
 
@@ -30,6 +30,7 @@ class JudgeBoard {
             return;
         }
 
+        togglePlayerToMove();
         int row = move.charAt(0) - 'A';
         int col = move.charAt(1) - 'a';
 
