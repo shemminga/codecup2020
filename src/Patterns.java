@@ -198,7 +198,7 @@ class Patterns implements Serializable {
                     0x360000000000000L, 0x640000000000L, 1275068416, 47244640256L, 8162774324609024L,
                     0x220000000000000L, 0xe000000000000000L, 81604378624L, 281483566907400L, 0x8000400020001000L,
                     0x1000200040008000L, 0x8000400020001L};
-    final SjoerdsGomokuPlayer.Pattern[] pat4 = new SjoerdsGomokuPlayer.Pattern[3360];
+    SjoerdsGomokuPlayer.Pattern[] pat4;
 
     private void initPat40() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[30]), la0(lc[533]), 0), p(la0(lc[37]), la0(lc[608]), 16),
@@ -1757,7 +1757,7 @@ class Patterns implements Serializable {
         System.arraycopy(arr, 0, pat4, 3000, arr.length);
     }
 
-    final SjoerdsGomokuPlayer.Pattern[] pat3 = new SjoerdsGomokuPlayer.Pattern[6720];
+    SjoerdsGomokuPlayer.Pattern[] pat3;
 
     private void initPat30() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[715]), la0(lc[376]), 0, 1), p(la0(lc[706]), la0(lc[457]), 16, 17),
@@ -6134,7 +6134,7 @@ class Patterns implements Serializable {
         System.arraycopy(arr, 0, pat3, 6500, arr.length);
     }
 
-    final SjoerdsGomokuPlayer.Pattern[] pat2 = new SjoerdsGomokuPlayer.Pattern[6720];
+    SjoerdsGomokuPlayer.Pattern[] pat2;
 
     private void initPat20() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[914]), la0(lc[313]), 0, 1, 2), p(la0(lc[709]), la0(lc[294]), 16, 17, 18),
@@ -11573,7 +11573,7 @@ class Patterns implements Serializable {
         System.arraycopy(arr, 0, pat2, 6500, arr.length);
     }
 
-    final SjoerdsGomokuPlayer.Pattern[] pat1 = new SjoerdsGomokuPlayer.Pattern[3360];
+    SjoerdsGomokuPlayer.Pattern[] pat1;
 
     private void initPat10() {
         var arr = new SjoerdsGomokuPlayer.Pattern[]{p(la0(lc[714]), la0(lc[1]), 0, 1, 2, 3), p(la0(lc[702]), la0(lc[23]), 16, 17, 18, 19),
@@ -14370,7 +14370,14 @@ class Patterns implements Serializable {
         System.arraycopy(arr, 0, pat1, 3000, arr.length);
     }
 
+    Patterns(boolean x) {}
+
     Patterns() {
+        pat1 = new SjoerdsGomokuPlayer.Pattern[3360];
+        pat2 = new SjoerdsGomokuPlayer.Pattern[6720];
+        pat3 = new SjoerdsGomokuPlayer.Pattern[6720];
+        pat4 = new SjoerdsGomokuPlayer.Pattern[3360];
+
         initPat40();
         initPat41();
         initPat42();

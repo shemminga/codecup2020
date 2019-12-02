@@ -357,6 +357,7 @@ public class SjoerdsGomokuPlayer {
             return (results[0] | results[1] | results[2] | results[3]) == 0;
         }
 
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
@@ -433,6 +434,26 @@ public class SjoerdsGomokuPlayer {
             this.emptyFields = emptyFields;
             this.playerStones = playerStones;
             this.fieldIdxs = fieldIdxs;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Pattern)) return false;
+
+            final Pattern pattern = (Pattern) o;
+
+            if (!Arrays.equals(emptyFields, pattern.emptyFields)) return false;
+            if (!Arrays.equals(playerStones, pattern.playerStones)) return false;
+            return Arrays.equals(fieldIdxs, pattern.fieldIdxs);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(emptyFields);
+            result = 31 * result + Arrays.hashCode(playerStones);
+            result = 31 * result + Arrays.hashCode(fieldIdxs);
+            return result;
         }
     }
 
@@ -523,7 +544,7 @@ public class SjoerdsGomokuPlayer {
             if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
             CalcResult calcResult = calcCache.get(board);
 
-            if (calcResult.match4 == null)  calcResult.match4 = match(board, patterns.pat4);
+            if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
 
             if (calcResult.immediateWin == CalcResult.UNKNOWN)
                 calcResult.immediateWin = Arrays.mismatch(calcResult.match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
@@ -578,8 +599,8 @@ public class SjoerdsGomokuPlayer {
             return retval;
         }
 
-        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final int[][] match4, final int[][] match3, final int[][] match2,
-                final int[][] match1, int level) {
+        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final int[][] match4,
+                final int[][] match3, final int[][] match2, final int[][] match1, int level) {
             final int immediateLoss = Arrays.mismatch(match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
                 debugAnalyzer.addChildMove(immediateLoss, "IMM LOSS");
@@ -637,7 +658,7 @@ public class SjoerdsGomokuPlayer {
             final List<Map.Entry<Integer, Integer>> allMoves = IntStream.range(0, 255)
                     .mapToObj(i -> Map.entry(i, scores[i]))
                     .filter(e -> e.getValue() > 0)
-                    .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                     .collect(Collectors.toList());
 
             final Stream<Map.Entry<Integer, Integer>> strongMoves = allMoves.stream()
