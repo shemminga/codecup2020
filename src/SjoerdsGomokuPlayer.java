@@ -85,6 +85,11 @@ public class SjoerdsGomokuPlayer {
             Move move = io.readMove();
             if (move == Move.QUIT) {
                 Timer.endMove(dbgPrinter, board, true);
+                dbgPrinter.log("Memory use:" +
+                        " Free : " + Runtime.getRuntime().freeMemory() +
+                        " Max  : " + Runtime.getRuntime().maxMemory() +
+                        " Total: " + Runtime.getRuntime().totalMemory()
+                );
                 dbgPrinter.log("Exit by command");
                 return;
             }
@@ -525,10 +530,6 @@ public class SjoerdsGomokuPlayer {
         }
 
         private static int determineSearchDepth(Board board) {
-            if (board.moves < 5) {
-                return 4;
-            }
-
             if (Timer.totalTime > (4E9 + 5E8)) {
                 return 2;
             }
@@ -668,7 +669,7 @@ public class SjoerdsGomokuPlayer {
                     .limit(2);
 
             final List<Map.Entry<Integer, Integer>> genMoves = Stream.concat(strongMoves, weakMoves)
-                    .limit(3) // Unfortunately, not enough power
+                    .limit(4) // Unfortunately, not enough power
                     .collect(Collectors.toList());
 
             debugAnalyzer.addChildMoves(genMoves);
@@ -831,7 +832,7 @@ public class SjoerdsGomokuPlayer {
     }
 
 //@formatter:off
-/*
+//*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
@@ -2200,6 +2201,6 @@ initPat15();
 initPat16();
 }
 }
-*/
+//*/
 //@formatter:on
 }
