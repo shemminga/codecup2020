@@ -494,7 +494,7 @@ public class SjoerdsGomokuPlayer {
         private static final int SCORE = 1;
 
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
-        private static final int[] NIL_COUNTS = new int[256];
+        private static final byte[] NIL_COUNTS = new byte[256];
         protected static final int MAX_SCORE = Integer.MAX_VALUE;
         protected static final int MIN_SCORE = -MAX_SCORE;
         protected static final int UNCERTAINTY = 21474836;
@@ -600,8 +600,8 @@ public class SjoerdsGomokuPlayer {
             return retval;
         }
 
-        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final int[][] match4,
-                final int[][] match3, final int[][] match2, final int[][] match1, int level) {
+        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final byte[][] match4,
+                final byte[][] match3, final byte[][] match2, final byte[][] match1, int level) {
             final int immediateLoss = Arrays.mismatch(match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
                 debugAnalyzer.addChildMove(immediateLoss, "IMM LOSS");
@@ -695,8 +695,8 @@ public class SjoerdsGomokuPlayer {
             return Collections.emptyList();
         }
 
-        private static int scoreBoard(final boolean isPlayer, final int[][] match4, final int[][] match3,
-                final int[][] match2, final int[][] match1) {
+        private static int scoreBoard(final boolean isPlayer, final byte[][] match4, final byte[][] match3,
+                final byte[][] match2, final byte[][] match1) {
             Timer.boardsScored++;
 
             int playerToMoveFactor = isPlayer ? 1 : -1;
@@ -782,8 +782,8 @@ public class SjoerdsGomokuPlayer {
             return new int[]{fieldIdx, score};
         }
 
-        private static int[][] match(final Board board, final Pattern[] patterns) {
-            final int[][] possibleMoves = new int[2][256];
+        private static byte[][] match(final Board board, final Pattern[] patterns) {
+            final byte[][] possibleMoves = new byte[2][256];
 
             long[] nPS = new long[]{~board.playerStones[0], ~board.playerStones[1], ~board.playerStones[2],
                     ~board.playerStones[3]};
@@ -823,16 +823,16 @@ public class SjoerdsGomokuPlayer {
     static class CalcResult {
         public static final int UNKNOWN = -2;
         public static final int NO = -1;
-        int[][] match4;
-        int[][] match3;
-        int[][] match2;
-        int[][] match1;
+        byte[][] match4;
+        byte[][] match3;
+        byte[][] match2;
+        byte[][] match1;
         int immediateWin = UNKNOWN;
         List<Integer> moves;
     }
 
 //@formatter:off
-//*
+/*
 static class Patterns {
 private static long[] la(long... ls) { return ls; }
 private static long[] la0(long l) { return la(l, 0, 0, 0); }
