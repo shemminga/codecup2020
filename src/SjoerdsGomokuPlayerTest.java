@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.zip.DataFormatException;
 
 public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
@@ -10,7 +11,7 @@ public class SjoerdsGomokuPlayerTest {
             new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
     private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, DataFormatException {
         DBG_PRINTER.printMoves = true;
         DBG_PRINTER.printMove("Opening 1", "Hh", MOVE_CONVERTER.toMove(119));
         DBG_PRINTER.printMove("Opening 2", "Ii", MOVE_CONVERTER.toMove(136));
@@ -25,7 +26,7 @@ public class SjoerdsGomokuPlayerTest {
         testMoves();
     }
 
-    private static void testMoves() {
+    private static void testMoves() throws DataFormatException {
         testFinish5();
         testFinish4();
 
@@ -33,13 +34,13 @@ public class SjoerdsGomokuPlayerTest {
         testScenario2();
     }
 
-    private static void testFinish5() {
+    private static void testFinish5() throws DataFormatException {
         testMoveGen("Win horizontal", "Ae", "Aa", "Ba", "Ab", "Bb", "Ac", "Bc", "Ad", "Bd");
         testMoveGen("Win diagonal", "Ee", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd", "Bd");
         testMoveGen("Block loss", "Ee", "Hi", "Aa", "Da", "Bb", "Mm", "Cc", "Bc", "Dd");
     }
 
-    private static void testFinish4() {
+    private static void testFinish4() throws DataFormatException {
         testMoveGen("Exploit open 3", "Ab", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
         testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
@@ -50,20 +51,21 @@ public class SjoerdsGomokuPlayerTest {
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 
-    private static void testScenario1() {
+    private static void testScenario1() throws DataFormatException {
         final SjoerdsGomokuPlayer.Board board = newBoard("Gh", "Jh", "Ji", "Kg", "Kh", "Mf", "Ki", "Mi", "Lg", "Lh",
                 "Li", "Lm");
         testScenario("Scenario 1", true, board, "Hi", "Ii", "Ij", "Hk",
                 /* Finishing moves: */ "Fg", "Ef", "Jk");
     }
 
-    private static void testScenario2() {
+    private static void testScenario2() throws DataFormatException {
         final SjoerdsGomokuPlayer.Board board = newBoard("El", "Fk", "Ek", "Zz", "Ej", "Di", "Fj", "Gj", "Gk", "Fi",
                 "Ei", "Dh", "Eh", "Eg", "Dj", "Hl", "Fl", "Fm", "Ff", "Bj", "Gg", "Ck", "Hf", "Fh", "Gf");
         testScenario("Scenario 2", false, board,"Ak");
     }
 
-    private static void testScenario(final String desc, final boolean blackStarts, final SjoerdsGomokuPlayer.Board board, final String... steps) {
+    private static void testScenario(final String desc, final boolean blackStarts, final SjoerdsGomokuPlayer.Board board, final String... steps)
+            throws DataFormatException {
         System.out.println("-\nScenario: " + desc);
         boolean blackOnTurn = blackStarts;
         for (int i = 0; i < steps.length; i++) {
@@ -77,13 +79,13 @@ public class SjoerdsGomokuPlayerTest {
         System.out.println("Scenario OK: " + desc);
     }
 
-    private static void testMoveGen(String desc, String expectedMove, String... setupMoves) {
+    private static void testMoveGen(String desc, String expectedMove, String... setupMoves) throws DataFormatException {
         final SjoerdsGomokuPlayer.Board board = newBoard(setupMoves);
         testMoveGen(desc, expectedMove, board);
     }
 
     private static void testMoveGen(final String desc, final String expectedMove,
-            final SjoerdsGomokuPlayer.Board board) {
+            final SjoerdsGomokuPlayer.Board board) throws DataFormatException {
         final SjoerdsGomokuPlayer.MoveGenerator generator =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, GENERATION_ANALYZER);
         SjoerdsGomokuPlayer.Timer.generatedMoves = 0;

@@ -1,9 +1,10 @@
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Random;
+import java.util.zip.DataFormatException;
 
 public class PvP {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, DataFormatException {
         System.out.println("Waiting for enter");
         System.in.read();
 
@@ -26,7 +27,7 @@ public class PvP {
         thread2.join();
     }
 
-    private static SjoerdsGomokuPlayer newPlayer(final PlayerPipes pipes) {
+    private static SjoerdsGomokuPlayer newPlayer(final PlayerPipes pipes) throws DataFormatException {
         final SjoerdsGomokuPlayer.DbgPrinter dbgPrinter =
                 new SjoerdsGomokuPlayer.DbgPrinter(pipes.err.writeEnd, SjoerdsGomokuPlayer.START_UP_TIME, false);
         final Random random = SjoerdsGomokuPlayer.makeRandom(dbgPrinter);
