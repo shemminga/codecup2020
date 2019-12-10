@@ -27,13 +27,9 @@ public class PvP {
     }
 
     private static SjoerdsGomokuPlayer newPlayer(final PlayerPipes pipes) throws DataFormatException {
-        final SjoerdsGomokuPlayer.DbgPrinter dbgPrinter =
-                new SjoerdsGomokuPlayer.DbgPrinter(pipes.err.writeEnd, SjoerdsGomokuPlayer.START_UP_TIME, false);
-        final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(dbgPrinter, pipes.in.readEnd, pipes.out.writeEnd);
-
-        final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(io);
-
-        return new SjoerdsGomokuPlayer(moveGenerator, io, dbgPrinter);
+        final SjoerdsGomokuPlayer.IO io =
+                new SjoerdsGomokuPlayer.IO(pipes.in.readEnd, pipes.out.writeEnd, pipes.err.writeEnd, false);
+        return new SjoerdsGomokuPlayer(io);
     }
 
     private static Runnable playerRunnable(SjoerdsGomokuPlayer player) {

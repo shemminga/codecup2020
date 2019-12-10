@@ -21,32 +21,18 @@ import java.util.zip.Inflater;
 public class SjoerdsGomokuPlayer {
     static final long START_UP_TIME = System.nanoTime();
 
-    private final DbgPrinter dbgPrinter;
-    private final MoveGenerator moveGenerator;
     private final IO io;
+    private final MoveGenerator moveGenerator;
 
     public static void main(String[] args) throws IOException, DataFormatException {
-        final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME, true);
-        final IO io = makeIO(dbgPrinter, System.in, System.out);
-        final MoveGenerator gen = getMoveGenerator(io);
-
-        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, io, dbgPrinter);
-
+        final IO io = new IO(System.in, System.out, System.err, true);
+        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(io);
         player.play();
     }
 
-    static MoveGenerator getMoveGenerator(final IO io) throws DataFormatException {
-        return new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter);
-    }
-
-    static IO makeIO(final DbgPrinter dbgPrinter, final InputStream in, final PrintStream out) {
-        return new IO(new MoveConverter(dbgPrinter), in, out, dbgPrinter);
-    }
-
-    SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final IO io, final DbgPrinter dbgPrinter) {
-        this.moveGenerator = moveGenerator;
+    SjoerdsGomokuPlayer(final IO io) throws DataFormatException {
         this.io = io;
-        this.dbgPrinter = dbgPrinter;
+        this.moveGenerator = new PatternMatchMoveGenerator(io.moveConverter, io.dbgPrinter, io.timer);
     }
 
     void play() throws IOException {
@@ -76,13 +62,7 @@ public class SjoerdsGomokuPlayer {
         while (true) {
             Move move = io.readMove();
             if (move == Move.QUIT) {
-                Timer.endMove(dbgPrinter, board, true);
-                dbgPrinter.log("Memory use:" +
-                        " Free : " + Runtime.getRuntime().freeMemory() +
-                        " Max  : " + Runtime.getRuntime().maxMemory() +
-                        " Total: " + Runtime.getRuntime().totalMemory()
-                );
-                dbgPrinter.log("Exit by command");
+                io.timer.endMove(board, true);
                 return;
             }
 
@@ -164,16 +144,18 @@ public class SjoerdsGomokuPlayer {
     }
 
     static final class IO {
-        final MoveConverter moveConverter;
         final DbgPrinter dbgPrinter;
+        final MoveConverter moveConverter;
+        final Timer timer;
         private final InputStream in;
         private final PrintStream out;
 
-        IO(MoveConverter moveConverter, InputStream in, PrintStream out, final DbgPrinter dbgPrinter) {
-            this.moveConverter = moveConverter;
+        IO(InputStream in, PrintStream out, PrintStream err, boolean dbgPrintMoves) {
             this.in = in;
             this.out = out;
-            this.dbgPrinter = dbgPrinter;
+            dbgPrinter = new DbgPrinter(err, START_UP_TIME, dbgPrintMoves);
+            moveConverter = new MoveConverter(dbgPrinter);
+            timer = new Timer(dbgPrinter);
         }
 
         private Move readMove() throws IOException {
@@ -184,7 +166,7 @@ public class SjoerdsGomokuPlayer {
             dbgPrinter.separator();
             final int rowInt = robustRead();
             final int colInt = robustRead();
-            if (useTimer) Timer.startMove();
+            if (useTimer) timer.startMove();
 
             final int fieldIdx = MoveConverter.toFieldIdx(rowInt, colInt);
             String moveStr = (char) rowInt + "" + (char) colInt;
@@ -232,7 +214,7 @@ public class SjoerdsGomokuPlayer {
 
             dbgPrinter.printMove("Out", moveStr, move);
 
-            Timer.endMove(dbgPrinter, board, stopTimer);
+            timer.endMove(board, stopTimer);
             dbgPrinter.flush(); // Flush debug output so debug and regular output are ordered correctly
             out.println(moveStr);
             out.flush();
@@ -240,16 +222,21 @@ public class SjoerdsGomokuPlayer {
     }
 
     static final class Timer {
-        static int generatedMoves = 0;
-        static int boardsScored = 0;
-        private static long timerStart;
-        static long totalTime = 0;
+        private final DbgPrinter dbgPrinter;
+        int generatedMoves = 0;
+        int boardsScored = 0;
+        long timerStart;
+        long totalTime = 0;
 
-        private static void startMove() {
+        Timer(DbgPrinter dbgPrinter) {
+            this.dbgPrinter = dbgPrinter;
+        }
+
+        private void startMove() {
             timerStart = System.nanoTime();
         }
 
-        private static void endMove(DbgPrinter dbgPrinter, Board board, boolean stopTimer) {
+        private void endMove(Board board, boolean stopTimer) {
             dbgPrinter.log(String.format("Generated moves: %d, boards scored: %d", generatedMoves, boardsScored));
             if (stopTimer) {
                 generatedMoves = 0;
@@ -493,20 +480,22 @@ public class SjoerdsGomokuPlayer {
 
         private final MoveConverter moveConverter;
         private final DbgPrinter dbgPrinter;
+        private final Timer timer;
         private final GenerationAnalyzer debugAnalyzer;
 
         private final Patterns patterns = DataReader.getPatterns();
         private final Map<Board, CalcResult> calcCache = new HashMap<>(100_000, 1.0f);
 
-        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter)
+        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter, final Timer timer)
                 throws DataFormatException {
-            this(moveConverter, dbgPrinter, new DummyGenerationAnalyzer());
+            this(moveConverter, dbgPrinter, timer, new DummyGenerationAnalyzer());
         }
 
-        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter,
+        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter, final Timer timer,
                 final GenerationAnalyzer debugAnalyzer) throws DataFormatException {
             this.moveConverter = moveConverter;
             this.dbgPrinter = dbgPrinter;
+            this.timer = timer;
             this.debugAnalyzer = debugAnalyzer;
         }
 
@@ -546,12 +535,12 @@ public class SjoerdsGomokuPlayer {
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private static int determineSearchDepth(Board board) {
-            if (Timer.totalTime > (4E9 + 5E8)) {
+        private int determineSearchDepth(Board board) {
+            if (timer.totalTime > (4E9 + 5E8)) {
                 return 2;
             }
 
-            if (Timer.totalTime > (4E9)) {
+            if (timer.totalTime > (4E9)) {
                 return 4;
             }
 
@@ -585,7 +574,7 @@ public class SjoerdsGomokuPlayer {
 
             if (calcResult.moves == null) {
                 calcResult.moves = listTopMoves(board, isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1, level);
-                Timer.generatedMoves += calcResult.moves.size();
+                timer.generatedMoves += calcResult.moves.size();
             }
 
             int[] retval = new int[]{calcResult.moves.get(0), isPlayer ? MIN_SCORE : MAX_SCORE};
@@ -712,9 +701,9 @@ public class SjoerdsGomokuPlayer {
             return Collections.emptyList();
         }
 
-        private static int scoreBoard(final boolean isPlayer, final byte[][] match4, final byte[][] match3,
+        private int scoreBoard(final boolean isPlayer, final byte[][] match4, final byte[][] match3,
                 final byte[][] match2, final byte[][] match1) {
-            Timer.boardsScored++;
+            timer.boardsScored++;
 
             int playerToMoveFactor = isPlayer ? 1 : -1;
             int onMove = isPlayer ? PLAYER : OPPONENT;

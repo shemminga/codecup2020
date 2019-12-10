@@ -4,19 +4,15 @@ import java.util.Objects;
 import java.util.zip.DataFormatException;
 
 public class SjoerdsGomokuPlayerTest {
-    private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
-            new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
-    protected static final SjoerdsGomokuPlayer.IO IO = SjoerdsGomokuPlayer.makeIO(DBG_PRINTER, null, null);
-    private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
-            new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
+    private static final SjoerdsGomokuPlayer.IO IO = new SjoerdsGomokuPlayer.IO(null, null, System.err, false);
     private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
 
     public static void main(String[] args) throws IOException, DataFormatException {
-        DBG_PRINTER.printMoves = true;
-        DBG_PRINTER.printMove("Opening 1", "Hh", MOVE_CONVERTER.toMove(119));
-        DBG_PRINTER.printMove("Opening 2", "Ii", MOVE_CONVERTER.toMove(136));
-        DBG_PRINTER.printMove("Opening 3", "Kh", MOVE_CONVERTER.toMove(167));
-        DBG_PRINTER.printMoves = false;
+        IO.dbgPrinter.printMoves = true;
+        IO.dbgPrinter.printMove("Opening 1", "Hh", IO.moveConverter.toMove(119));
+        IO.dbgPrinter.printMove("Opening 2", "Ii", IO.moveConverter.toMove(136));
+        IO.dbgPrinter.printMove("Opening 3", "Kh", IO.moveConverter.toMove(167));
+        IO.dbgPrinter.printMoves = false;
         // Warm-up loading patterns and such
         //MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
 
@@ -87,9 +83,9 @@ public class SjoerdsGomokuPlayerTest {
     private static void testMoveGen(final String desc, final String expectedMove,
             final SjoerdsGomokuPlayer.Board board) throws DataFormatException {
         final SjoerdsGomokuPlayer.MoveGenerator generator =
-                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, GENERATION_ANALYZER);
-        SjoerdsGomokuPlayer.Timer.generatedMoves = 0;
-        SjoerdsGomokuPlayer.Timer.boardsScored = 0;
+                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer, GENERATION_ANALYZER);
+        IO.timer.generatedMoves = 0;
+        IO.timer.boardsScored = 0;
 
         final long start = System.nanoTime();
         final SjoerdsGomokuPlayer.Move move = generator.generateMove(board);
@@ -97,8 +93,7 @@ public class SjoerdsGomokuPlayerTest {
 
         expect(board.copy().apply(move), expectedMove, toString(move), desc);
 
-        System.out.printf("Generated moves: %d, boards scored: %d\n", SjoerdsGomokuPlayer.Timer.generatedMoves,
-                SjoerdsGomokuPlayer.Timer.boardsScored);
+        System.out.printf("Generated moves: %d, boards scored: %d\n", IO.timer.generatedMoves, IO.timer.boardsScored);
         System.out.printf("Test OK: %s (duration %d ns = %.5f s) %s\n", desc, end - start, ((double) end - start) * 1E-9D,
                 durationWarning(end - start));
     }
@@ -119,7 +114,7 @@ public class SjoerdsGomokuPlayerTest {
         }
 
         final int fieldIdx = SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(mv.charAt(0), mv.charAt(1));
-        return MOVE_CONVERTER.toMove(fieldIdx);
+        return IO.moveConverter.toMove(fieldIdx);
     }
 
     private static String toString(SjoerdsGomokuPlayer.Move move) {
@@ -136,7 +131,7 @@ public class SjoerdsGomokuPlayerTest {
 
     private static void expect(final SjoerdsGomokuPlayer.Board board, String expected, String actual, String desc) {
         if (!Objects.equals(expected, actual)) {
-            final String dot = GENERATION_ANALYZER.toString(MOVE_CONVERTER);
+            final String dot = GENERATION_ANALYZER.toString(IO.moveConverter);
             System.out.println(dot);
 
             TestDumper.printBoard(board, expected, actual);
