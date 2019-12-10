@@ -246,11 +246,7 @@ public class SjoerdsGomokuPlayer {
             if (stopTimer)
                 totalTime += elapsedNanos;
             dbgPrinter.log(String.format("Move %3d; time used%s: %s, total %s", board.moves,
-                    stopTimer ? "" : " (running)", timeFmt(elapsedNanos), timeFmt(totalTime)));
-        }
-
-        private static String timeFmt(long nanos) {
-            return String.format("%10d ns (%6.5f s)", nanos, ((double) nanos) / 1E9D);
+                    stopTimer ? "" : " (running)", DbgPrinter.timeFmt(elapsedNanos), DbgPrinter.timeFmt(totalTime)));
         }
     }
 
@@ -394,12 +390,16 @@ public class SjoerdsGomokuPlayer {
             }
         }
 
-        protected void log(String message) {
-            err.println((System.nanoTime() - startUpTime) + " " + message);
+        private void log(String message) {
+            err.println(timeFmt(System.nanoTime() - startUpTime) + " " + message);
         }
 
         private void separator() {
             err.println('-');
+        }
+
+        private static String timeFmt(long nanos) {
+            return String.format("%10d ns (%6.5f s)", nanos, ((double) nanos) / 1E9D);
         }
     }
 
