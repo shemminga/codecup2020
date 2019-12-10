@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Random;
 import java.util.zip.DataFormatException;
 
 public class PvP {
@@ -30,12 +29,11 @@ public class PvP {
     private static SjoerdsGomokuPlayer newPlayer(final PlayerPipes pipes) throws DataFormatException {
         final SjoerdsGomokuPlayer.DbgPrinter dbgPrinter =
                 new SjoerdsGomokuPlayer.DbgPrinter(pipes.err.writeEnd, SjoerdsGomokuPlayer.START_UP_TIME, false);
-        final Random random = SjoerdsGomokuPlayer.makeRandom(dbgPrinter);
         final SjoerdsGomokuPlayer.IO io = SjoerdsGomokuPlayer.makeIO(dbgPrinter, pipes.in.readEnd, pipes.out.writeEnd);
 
         final SjoerdsGomokuPlayer.MoveGenerator moveGenerator = SjoerdsGomokuPlayer.getMoveGenerator(io);
 
-        return new SjoerdsGomokuPlayer(moveGenerator, random, io, dbgPrinter);
+        return new SjoerdsGomokuPlayer(moveGenerator, io, dbgPrinter);
     }
 
     private static Runnable playerRunnable(SjoerdsGomokuPlayer player) {

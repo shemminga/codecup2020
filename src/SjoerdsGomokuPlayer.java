@@ -12,7 +12,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -24,18 +23,14 @@ public class SjoerdsGomokuPlayer {
 
     private final DbgPrinter dbgPrinter;
     private final MoveGenerator moveGenerator;
-    private final Random rnd;
     private final IO io;
 
     public static void main(String[] args) throws IOException, DataFormatException {
         final DbgPrinter dbgPrinter = new DbgPrinter(System.err, START_UP_TIME, true);
-
-        final Random rnd = makeRandom(dbgPrinter);
         final IO io = makeIO(dbgPrinter, System.in, System.out);
+        final MoveGenerator gen = getMoveGenerator(io);
 
-        MoveGenerator gen = getMoveGenerator(io);
-
-        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, rnd, io, dbgPrinter);
+        final SjoerdsGomokuPlayer player = new SjoerdsGomokuPlayer(gen, io, dbgPrinter);
 
         player.play();
     }
@@ -48,17 +43,8 @@ public class SjoerdsGomokuPlayer {
         return new IO(new MoveConverter(dbgPrinter), in, out, dbgPrinter);
     }
 
-    static Random makeRandom(final DbgPrinter dbgPrinter) {
-        @SuppressWarnings("NumericOverflow")
-        final long seed = 8682522807148012L * 1181783497276652981L * System.nanoTime();
-        dbgPrinter.log("SD " + seed);
-
-        return new Random(seed);
-    }
-
-    SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final Random rnd, final IO io, final DbgPrinter dbgPrinter) {
+    SjoerdsGomokuPlayer(final MoveGenerator moveGenerator, final IO io, final DbgPrinter dbgPrinter) {
         this.moveGenerator = moveGenerator;
-        this.rnd = rnd;
         this.io = io;
         this.dbgPrinter = dbgPrinter;
     }
@@ -82,7 +68,7 @@ public class SjoerdsGomokuPlayer {
                 applyMove(board, move);
             }
 
-            final Move move = rnd.nextBoolean() ? Move.SWITCH : moveGenerator.generateMove(board);
+            final Move move = moveGenerator.decideSwitch(board);
             applyMove(board, move);
             io.outputMove(move, board, true);
         }
@@ -468,8 +454,8 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    @FunctionalInterface
     interface MoveGenerator {
+        Move decideSwitch(Board board);
         Move generateMove(Board board);
     }
 
@@ -522,6 +508,30 @@ public class SjoerdsGomokuPlayer {
             this.moveConverter = moveConverter;
             this.dbgPrinter = dbgPrinter;
             this.debugAnalyzer = debugAnalyzer;
+        }
+
+        @Override
+        public Move decideSwitch(final Board board) {
+            // Apply best possible move to board and then see who we'd rather be.
+            Move move = generateMove(board);
+            Board newBoard = board.copy().apply(move);
+
+            int scoreKeep = scoreBoard(newBoard);
+            int scoreFlip = scoreBoard(newBoard.flip());
+
+            return scoreKeep >= scoreFlip ? move : Move.SWITCH;
+        }
+
+        private int scoreBoard(Board board) {
+            if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
+            CalcResult calcResult = calcCache.get(board);
+
+            if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
+            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
+            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
+            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
+
+            return scoreBoard(true, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1);
         }
 
         @Override
