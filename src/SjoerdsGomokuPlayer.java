@@ -215,9 +215,7 @@ public class SjoerdsGomokuPlayer {
             dbgPrinter.printMove("Out", moveStr, move);
 
             timer.endMove(board, stopTimer);
-            dbgPrinter.flush(); // Flush debug output so debug and regular output are ordered correctly
             out.println(moveStr);
-            out.flush();
         }
     }
 
@@ -402,10 +400,6 @@ public class SjoerdsGomokuPlayer {
 
         private void separator() {
             err.println('-');
-        }
-
-        private void flush() {
-            err.flush();
         }
     }
 
