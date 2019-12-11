@@ -364,12 +364,7 @@ public final class SjoerdsGomokuPlayer {
             if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
             CalcResult calcResult = calcCache.get(board);
 
-            if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
-            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
-            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
-            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
-
-            return scoreBoard(true, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1);
+            return scoreBoard(true, board, calcResult);
         }
 
         @Override
@@ -411,18 +406,14 @@ public final class SjoerdsGomokuPlayer {
                 return ints;
             }
 
-            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
-            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
-            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
-
             if (searchDepth <= 0) {
-                final int score = scoreBoard(isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1);
+                final int score = scoreBoard(isPlayer, board, calcResult);
                 debugAnalyzer.setScore(score);
                 return new int[]{-1, score};
             }
 
             if (calcResult.moves == null) {
-                calcResult.moves = listTopMoves(board, isPlayer, calcResult.match4, calcResult.match3, calcResult.match2, calcResult.match1, level);
+                calcResult.moves = listTopMoves(isPlayer, board, calcResult, level);
                 timer.generatedMoves += calcResult.moves.size();
             }
 
@@ -455,60 +446,65 @@ public final class SjoerdsGomokuPlayer {
             return retval;
         }
 
-        private List<Integer> listTopMoves(final Board board, final boolean isPlayer, final byte[][] match4,
-                final byte[][] match3, final byte[][] match2, final byte[][] match1, int level) {
-            final int immediateLoss = Arrays.mismatch(match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
+        private List<Integer> listTopMoves(final boolean isPlayer, final Board board, final CalcResult calcResult, int level) {
+            if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
+
+            final int immediateLoss = Arrays.mismatch(calcResult.match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
                 debugAnalyzer.addChildMove(immediateLoss, "IMM LOSS");
                 // We will need to do this move, no other will have to be searched at this level.
                 return Collections.singletonList(immediateLoss);
             }
 
+            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
+            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
+            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
+
             int onMove = isPlayer ? PLAYER : OPPONENT;
             int offMove = isPlayer ? OPPONENT : PLAYER;
             int[] scores = new int[256];
             for (int i = 0; i < 256; i++) {
-                if (match3[onMove][i] >= 2) {
+                if (calcResult.match3[onMove][i] >= 2) {
                     // Winning move.
                     scores[i] = 2_000_000_000;
                     continue;
                 }
 
-                if (match3[offMove][i] >= 2) {
+                if (calcResult.match3[offMove][i] >= 2) {
                     // Losing if not handled.
                     scores[i] = 1_900_000_000;
                     continue;
                 }
 
-                if (match3[onMove][i] >= 1) {
+                if (calcResult.match3[onMove][i] >= 1) {
                     // Possible chaining opportunity
                     scores[i] = 1_600_000_000;
                     continue;
                 }
 
-                if (match3[offMove][i] >= 1) {
+                if (calcResult.match3[offMove][i] >= 1) {
                     // Possible opponent chaining opportunity
                     scores[i] = 1_500_000_000;
                     continue;
                 }
 
-                if (match2[onMove][i] >= 2) {
+                if (calcResult.match2[onMove][i] >= 2) {
                     // Maybe there's an opportunity to create 4 match3s
                     scores[i] = 1_300_000_000;
                     continue;
                 }
 
-                if (match2[offMove][i] >= 2) {
+                if (calcResult.match2[offMove][i] >= 2) {
                     // Maybe there's an opportunity to create 4 match3s
                     scores[i] = 1_200_000_000;
                     continue;
                 }
 
                 scores[i] =
-                        match2[onMove ][i] * 20 + // Lenghtening 2s can create opportunities
-                        match2[offMove][i] * 20 +
-                        match1[onMove ][i] +
-                        match1[offMove][i];
+                        calcResult.match2[onMove ][i] * 20 + // Lenghtening 2s can create opportunities
+                        calcResult.match2[offMove][i] * 20 +
+                        calcResult.match1[onMove ][i] +
+                        calcResult.match1[offMove][i];
             }
 
             final List<Map.Entry<Integer, Integer>> allMoves = IntStream.range(0, 255)
@@ -550,8 +546,12 @@ public final class SjoerdsGomokuPlayer {
             return Collections.emptyList();
         }
 
-        private int scoreBoard(final boolean isPlayer, final byte[][] match4, final byte[][] match3,
-                final byte[][] match2, final byte[][] match1) {
+        private int scoreBoard(final boolean isPlayer, final Board board, final CalcResult calcResult) {
+            if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
+            if (calcResult.match3 == null) calcResult.match3 = match(board, patterns.pat3);
+            if (calcResult.match2 == null) calcResult.match2 = match(board, patterns.pat2);
+            if (calcResult.match1 == null) calcResult.match1 = match(board, patterns.pat1);
+
             timer.boardsScored++;
 
             int playerToMoveFactor = isPlayer ? 1 : -1;
@@ -563,47 +563,47 @@ public final class SjoerdsGomokuPlayer {
 
             for (int i = 0; i < 256; i++) {
                 // There's an immediate win.
-                if (match4[onMove][i] >= 1) {
+                if (calcResult.match4[onMove][i] >= 1) {
                     return playerToMoveFactor * MAX_SCORE;
                 }
 
-                if (match4[offMove][i] >= 1) {
+                if (calcResult.match4[offMove][i] >= 1) {
                     winCounts[offMove][4]++;
                 }
 
-                if (match3[onMove][i] >= 2) {
+                if (calcResult.match3[onMove][i] >= 2) {
                     // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
                     winCounts[onMove][3]++;
-                } else if (match3[onMove][i] == 1 && match2[onMove][i] >= 3) {
+                } else if (calcResult.match3[onMove][i] == 1 && calcResult.match2[onMove][i] >= 3) {
                     // Create a 4 and an open 3.
                     winCounts[onMove][2]++;
                 }
 
-                if (match3[offMove][i] >= 2) {
+                if (calcResult.match3[offMove][i] >= 2) {
                     // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
                     winCounts[offMove][3]++;
-                } else if (match3[offMove][i] == 1 && match2[offMove][i] >= 3) {
+                } else if (calcResult.match3[offMove][i] == 1 && calcResult.match2[offMove][i] >= 3) {
                     // Create a 4 and an open 3.
                     winCounts[offMove][2]++;
                 }
 
-                if (match2[onMove][i] >= 4) {
+                if (calcResult.match2[onMove][i] >= 4) {
                     winCounts[onMove][2]++;
                 }
 
-                if (match2[offMove][i] >= 4) {
+                if (calcResult.match2[offMove][i] >= 4) {
                     winCounts[offMove][2]++;
                 }
 
-                opportunityCounts[onMove][1] += match1[onMove][i];
-                opportunityCounts[onMove][2] += match2[onMove][i];
-                opportunityCounts[onMove][3] += match3[onMove][i];
-                opportunityCounts[onMove][4] += match4[onMove][i];
+                opportunityCounts[onMove][1] += calcResult.match1[onMove][i];
+                opportunityCounts[onMove][2] += calcResult.match2[onMove][i];
+                opportunityCounts[onMove][3] += calcResult.match3[onMove][i];
+                opportunityCounts[onMove][4] += calcResult.match4[onMove][i];
 
-                opportunityCounts[offMove][1] += match1[offMove][i];
-                opportunityCounts[offMove][2] += match2[offMove][i];
-                opportunityCounts[offMove][3] += match3[offMove][i];
-                opportunityCounts[offMove][4] += match4[offMove][i];
+                opportunityCounts[offMove][1] += calcResult.match1[offMove][i];
+                opportunityCounts[offMove][2] += calcResult.match2[offMove][i];
+                opportunityCounts[offMove][3] += calcResult.match3[offMove][i];
+                opportunityCounts[offMove][4] += calcResult.match4[offMove][i];
             }
 
             // Two immediate wins for the opponent. Can't block that.
