@@ -12,10 +12,7 @@ public class GenPatterns {
     private static final GenPattern DIAG_1 = new GenPattern(5, 5, "Aa", "Bb", "Cc", "Dd", "Ee");
     private static final GenPattern DIAG_2 = new GenPattern(5, 5, "Ae", "Bd", "Cc", "Db", "Ea");
 
-    private static final SjoerdsGomokuPlayer.DbgPrinter DBG_PRINTER =
-            new SjoerdsGomokuPlayer.DbgPrinter(System.err, SjoerdsGomokuPlayer.START_UP_TIME, false);
-    private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER =
-            new SjoerdsGomokuPlayer.MoveConverter(DBG_PRINTER);
+    private static final SjoerdsGomokuPlayer.MoveConverter MOVE_CONVERTER = new SjoerdsGomokuPlayer.MoveConverter();
 
     public static void main(String[] args) {
         getPatterns();

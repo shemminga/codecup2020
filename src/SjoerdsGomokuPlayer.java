@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -18,8 +17,8 @@ import java.util.stream.Stream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-public class SjoerdsGomokuPlayer {
-    static final long START_UP_TIME = System.nanoTime();
+public final class SjoerdsGomokuPlayer {
+    private static final long START_UP_TIME = System.nanoTime();
 
     private final IO io;
     private final MoveGenerator moveGenerator;
@@ -250,119 +249,7 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    static final class Move {
-        private static final Move START = new Move(new long[]{0, 0, 0, 0});
-        private static final Move QUIT = new Move(new long[]{0, 0, 0, 0});
-        static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
-
-        private static final Move[] OPENING = {new Move(new long[]{0, 0x100, 0, 0}), // Hh
-                new Move(new long[]{0, 0, 0x80000000000000L, 0}), // Ii
-                new Move(new long[]{0, 0, 0x1000000, 0}) // Kh
-        };
-
-        long[] move;
-
-        private Move(final long[] move) {
-            this.move = move;
-        }
-    }
-
-    static final class Board {
-        static final int PLAYER = 0;
-        @SuppressWarnings("unused")
-        static final int OPPONENT = ~0;
-
-        int playerToMove = PLAYER;
-        long[] playerStones = {0, 0, 0, 0};
-        long[] opponentStones = {0, 0, 0, 0};
-        int moves = 0;
-
-        Board() {
-        }
-
-        private Board(final int playerToMove, final long[] playerStones, final long[] opponentStones) {
-            this.playerToMove = playerToMove;
-            this.playerStones = playerStones;
-            this.opponentStones = opponentStones;
-        }
-
-        Board copy() {
-            return new Board(playerToMove, Arrays.copyOf(playerStones, 4), Arrays.copyOf(opponentStones, 4));
-        }
-
-        Board apply(Move move) {
-            if (move == Move.SWITCH) {
-                return flip();
-            }
-            moves++;
-
-            long[] updatee = playerToMove == PLAYER ? playerStones : opponentStones;
-
-            for (int i = 0; i < 4; i++) {
-                updatee[i] |= move.move[i];
-            }
-
-            playerToMove = ~playerToMove;
-
-            return this;
-        }
-
-        protected Board flip() {
-            long[] swap = playerStones;
-            playerStones = opponentStones;
-            opponentStones = swap;
-            playerToMove = ~playerToMove;
-            return this;
-        }
-
-        boolean validMove(Move move) {
-            long[] results = new long[4];
-            long[] resultsP = new long[4];
-            long[] resultsO = new long[4];
-
-            for (int i = 0; i < 4; i++) {
-                resultsP[i] = (playerStones[i] & move.move[i]);
-            }
-
-            for (int i = 0; i < 4; i++) {
-                resultsO[i] = (opponentStones[i] & move.move[i]);
-            }
-
-            for (int i = 0; i < 4; i++) {
-                results[i] = resultsP[i] | resultsO[i];
-            }
-
-            return (results[0] | results[1] | results[2] | results[3]) == 0;
-        }
-
-        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            final Board board = (Board) o;
-            return playerToMove == board.playerToMove &&
-                    playerStones[0] == board.playerStones[0] && playerStones[1] == board.playerStones[1] &&
-                    playerStones[2] == board.playerStones[2] && playerStones[3] == board.playerStones[3] &&
-                    opponentStones[0] == board.opponentStones[0] && opponentStones[1] == board.opponentStones[1] &&
-                    opponentStones[2] == board.opponentStones[2] && opponentStones[3] == board.opponentStones[3];
-        }
-
-        @Override
-        public int hashCode() {
-            int result = playerToMove;
-            result = 31 * result + (int) (playerStones[0] ^ (playerStones[0] >>> 32));
-            result = 31 * result + (int) (playerStones[1] ^ (playerStones[1] >>> 32));
-            result = 31 * result + (int) (playerStones[2] ^ (playerStones[2] >>> 32));
-            result = 31 * result + (int) (playerStones[3] ^ (playerStones[3] >>> 32));
-            result = 31 * result + (int) (opponentStones[0] ^ (opponentStones[0] >>> 32));
-            result = 31 * result + (int) (opponentStones[1] ^ (opponentStones[1] >>> 32));
-            result = 31 * result + (int) (opponentStones[2] ^ (opponentStones[2] >>> 32));
-            result = 31 * result + (int) (opponentStones[3] ^ (opponentStones[3] >>> 32));
-            return result;
-        }
-    }
-
-    static class DbgPrinter {
+    static final class DbgPrinter {
         private final PrintStream err;
         private final long startUpTime;
         boolean printMoves;
@@ -400,38 +287,6 @@ public class SjoerdsGomokuPlayer {
 
         private static String timeFmt(long nanos) {
             return String.format("%10d ns (%6.5f s)", nanos, ((double) nanos) / 1E9D);
-        }
-    }
-
-    static class Pattern implements Serializable {
-        final long[] emptyFields;
-        final long[] playerStones;
-        final int[] fieldIdxs;
-
-        Pattern(final long[] emptyFields, final long[] playerStones, final int... fieldIdxs) {
-            this.emptyFields = emptyFields;
-            this.playerStones = playerStones;
-            this.fieldIdxs = fieldIdxs;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Pattern)) return false;
-
-            final Pattern pattern = (Pattern) o;
-
-            if (!Arrays.equals(emptyFields, pattern.emptyFields)) return false;
-            if (!Arrays.equals(playerStones, pattern.playerStones)) return false;
-            return Arrays.equals(fieldIdxs, pattern.fieldIdxs);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Arrays.hashCode(emptyFields);
-            result = 31 * result + Arrays.hashCode(playerStones);
-            result = 31 * result + Arrays.hashCode(fieldIdxs);
-            return result;
         }
     }
 
@@ -820,7 +675,119 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    static class CalcResult {
+    static final class Move {
+        private static final Move START = new Move(new long[]{0, 0, 0, 0});
+        private static final Move QUIT = new Move(new long[]{0, 0, 0, 0});
+        static final Move SWITCH = new Move(new long[]{0, 0, 0, 0});
+
+        private static final Move[] OPENING = {new Move(new long[]{0, 0x100, 0, 0}), // Hh
+                new Move(new long[]{0, 0, 0x80000000000000L, 0}), // Ii
+                new Move(new long[]{0, 0, 0x1000000, 0}) // Kh
+        };
+
+        long[] move;
+
+        private Move(final long[] move) {
+            this.move = move;
+        }
+    }
+
+    static final class Board {
+        static final int PLAYER = 0;
+        @SuppressWarnings("unused")
+        static final int OPPONENT = ~0;
+
+        int playerToMove = PLAYER;
+        long[] playerStones = {0, 0, 0, 0};
+        long[] opponentStones = {0, 0, 0, 0};
+        int moves = 0;
+
+        Board() {
+        }
+
+        private Board(final int playerToMove, final long[] playerStones, final long[] opponentStones) {
+            this.playerToMove = playerToMove;
+            this.playerStones = playerStones;
+            this.opponentStones = opponentStones;
+        }
+
+        Board copy() {
+            return new Board(playerToMove, Arrays.copyOf(playerStones, 4), Arrays.copyOf(opponentStones, 4));
+        }
+
+        Board apply(Move move) {
+            if (move == Move.SWITCH) {
+                return flip();
+            }
+            moves++;
+
+            long[] updatee = playerToMove == PLAYER ? playerStones : opponentStones;
+
+            for (int i = 0; i < 4; i++) {
+                updatee[i] |= move.move[i];
+            }
+
+            playerToMove = ~playerToMove;
+
+            return this;
+        }
+
+        protected Board flip() {
+            long[] swap = playerStones;
+            playerStones = opponentStones;
+            opponentStones = swap;
+            playerToMove = ~playerToMove;
+            return this;
+        }
+
+        boolean validMove(Move move) {
+            long[] results = new long[4];
+            long[] resultsP = new long[4];
+            long[] resultsO = new long[4];
+
+            for (int i = 0; i < 4; i++) {
+                resultsP[i] = (playerStones[i] & move.move[i]);
+            }
+
+            for (int i = 0; i < 4; i++) {
+                resultsO[i] = (opponentStones[i] & move.move[i]);
+            }
+
+            for (int i = 0; i < 4; i++) {
+                results[i] = resultsP[i] | resultsO[i];
+            }
+
+            return (results[0] | results[1] | results[2] | results[3]) == 0;
+        }
+
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            final Board board = (Board) o;
+            return playerToMove == board.playerToMove && playerStones[0] == board.playerStones[0] &&
+                    playerStones[1] == board.playerStones[1] && playerStones[2] == board.playerStones[2] &&
+                    playerStones[3] == board.playerStones[3] && opponentStones[0] == board.opponentStones[0] &&
+                    opponentStones[1] == board.opponentStones[1] && opponentStones[2] == board.opponentStones[2] &&
+                    opponentStones[3] == board.opponentStones[3];
+        }
+
+        @Override
+        public int hashCode() {
+            int result = playerToMove;
+            result = 31 * result + (int) (playerStones[0] ^ (playerStones[0] >>> 32));
+            result = 31 * result + (int) (playerStones[1] ^ (playerStones[1] >>> 32));
+            result = 31 * result + (int) (playerStones[2] ^ (playerStones[2] >>> 32));
+            result = 31 * result + (int) (playerStones[3] ^ (playerStones[3] >>> 32));
+            result = 31 * result + (int) (opponentStones[0] ^ (opponentStones[0] >>> 32));
+            result = 31 * result + (int) (opponentStones[1] ^ (opponentStones[1] >>> 32));
+            result = 31 * result + (int) (opponentStones[2] ^ (opponentStones[2] >>> 32));
+            result = 31 * result + (int) (opponentStones[3] ^ (opponentStones[3] >>> 32));
+            return result;
+        }
+    }
+
+    static final class CalcResult {
         public static final int UNKNOWN = -2;
         @SuppressWarnings("unused")
         public static final int NO = -1;
@@ -832,14 +799,46 @@ public class SjoerdsGomokuPlayer {
         List<Integer> moves;
     }
 
-    static class Patterns {
+    static final class Patterns {
         Pattern[] pat1;
         Pattern[] pat2;
         Pattern[] pat3;
         Pattern[] pat4;
     }
 
-    static class DataReader {
+    static final class Pattern {
+        final long[] emptyFields;
+        final long[] playerStones;
+        final int[] fieldIdxs;
+
+        Pattern(final long[] emptyFields, final long[] playerStones, final int... fieldIdxs) {
+            this.emptyFields = emptyFields;
+            this.playerStones = playerStones;
+            this.fieldIdxs = fieldIdxs;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Pattern)) return false;
+
+            final Pattern pattern = (Pattern) o;
+
+            if (!Arrays.equals(emptyFields, pattern.emptyFields)) return false;
+            if (!Arrays.equals(playerStones, pattern.playerStones)) return false;
+            return Arrays.equals(fieldIdxs, pattern.fieldIdxs);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(emptyFields);
+            result = 31 * result + Arrays.hashCode(playerStones);
+            result = 31 * result + Arrays.hashCode(fieldIdxs);
+            return result;
+        }
+    }
+
+    static final class DataReader {
         static Patterns getPatterns() throws DataFormatException {
             return deserializePatterns(Data.PATTERNS, Data.PATTERNS_UNCOMPRESSED_SIZE);
         }
@@ -896,7 +895,7 @@ public class SjoerdsGomokuPlayer {
         }
     }
 
-    static class Data {
+    static final class Data {
         static final int PATTERNS_UNCOMPRESSED_SIZE = 1572504;
         @SuppressWarnings("StringBufferReplaceableByString") // It really can't be replaced by String.
         static final String PATTERNS = new StringBuilder().append(

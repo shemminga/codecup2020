@@ -21,7 +21,7 @@ public class EncodeData {
         SjoerdsGomokuPlayer.Patterns verifyPatterns = SjoerdsGomokuPlayer.DataReader.deserializePatterns(patternsString, patternsBytes.length);
         verifyEquals(patterns, verifyPatterns);
 
-        System.out.println("static class Data {");
+        System.out.println("static final class Data {");
         printData("PATTERNS", patternsBytes.length, patternsString);
         System.out.println("}");
     }
