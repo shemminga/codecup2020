@@ -388,6 +388,10 @@ public final class SjoerdsGomokuPlayer {
                 return 4;
             }
 
+            if (timer.totalTime > (3E9 + 5E8)) {
+                return 6;
+            }
+
             return 8;
         }
 
@@ -520,7 +524,7 @@ public final class SjoerdsGomokuPlayer {
                     .limit(2);
 
             final List<Map.Entry<Integer, Integer>> genMoves = Stream.concat(strongMoves, weakMoves)
-                    .limit(4) // Unfortunately, not enough power
+                    .limit(3) // Unfortunately, not enough power
                     .collect(Collectors.toList());
 
             debugAnalyzer.addChildMoves(genMoves);
