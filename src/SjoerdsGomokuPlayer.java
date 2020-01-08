@@ -295,27 +295,11 @@ public final class SjoerdsGomokuPlayer {
         Move generateMove(Board board);
     }
 
-    interface GenerationAnalyzer {
-        void reset();
-        void addChildMove(int move, String note);
-        void addChildMoves(List<Map.Entry<Integer, Integer>> moveScores);
-        void selectCurrentMove(int move);
-        void levelUp();
-        void setScore(int score);
-        void setPreferredChild(int move);
-    }
-
-    private static class DummyGenerationAnalyzer implements GenerationAnalyzer {
-        @Override public void reset() {}
-        @Override public void addChildMove(final int move, final String note) {}
-        @Override public void addChildMoves(final List<Map.Entry<Integer, Integer>> moveScores) {}
-        @Override public void selectCurrentMove(final int move) {}
-        @Override public void levelUp() {}
-        @Override public void setScore(final int score) {}
-        @Override public void setPreferredChild(final int move) {}
-    }
-
     static class PatternMatchMoveGenerator implements MoveGenerator {
+        protected static final int MAX_SCORE = Integer.MAX_VALUE;
+        protected static final int MIN_SCORE = -MAX_SCORE;
+        protected static final int UNCERTAINTY = 21474836;
+
         private static final int PLAYER = 0;
         private static final int OPPONENT = 1;
         private static final int FIELD_IDX = 0;
@@ -323,29 +307,23 @@ public final class SjoerdsGomokuPlayer {
 
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
         private static final byte[] NIL_COUNTS = new byte[256];
-        protected static final int MAX_SCORE = Integer.MAX_VALUE;
-        protected static final int MIN_SCORE = -MAX_SCORE;
-        protected static final int UNCERTAINTY = 21474836;
+
+        private static final int MAX_DEPTH = 16;
+        private static final long MAX_NANOS = 4 * 1_000_000_000L;
+        private static final int MAX_MOVES = 125;
 
         private final MoveConverter moveConverter;
         private final DbgPrinter dbgPrinter;
         private final Timer timer;
-        private final GenerationAnalyzer debugAnalyzer;
 
         private final Patterns patterns = DataReader.getPatterns();
         private final Map<Board, CalcResult> calcCache = new HashMap<>(100_000, 1.0f);
 
         PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter, final Timer timer)
                 throws DataFormatException {
-            this(moveConverter, dbgPrinter, timer, new DummyGenerationAnalyzer());
-        }
-
-        PatternMatchMoveGenerator(final MoveConverter moveConverter, final DbgPrinter dbgPrinter, final Timer timer,
-                final GenerationAnalyzer debugAnalyzer) throws DataFormatException {
             this.moveConverter = moveConverter;
             this.dbgPrinter = dbgPrinter;
             this.timer = timer;
-            this.debugAnalyzer = debugAnalyzer;
         }
 
         @Override
@@ -369,33 +347,38 @@ public final class SjoerdsGomokuPlayer {
 
         @Override
         public Move generateMove(final Board board) {
-            final int searchDepth = determineSearchDepth(board);
-            dbgPrinter.log("Search depth: " + searchDepth);
+            long now = System.nanoTime();
 
-            debugAnalyzer.reset();
-            final int[] fieldIdxAndScore =
-                    minimax(board, searchDepth, 1, board.playerToMove == Board.PLAYER, MIN_SCORE, MAX_SCORE);
+            final long remainingNanos = MAX_NANOS - (timer.totalTime + now - timer.timerStart);
+            int remainingMoves = MAX_MOVES - board.moves;
+
+            long availableTime = remainingNanos / remainingMoves;
+            final long maxNanoTime = now + availableTime;
+
+            int[] fieldIdxAndScore = null;
+            for (int searchDepth = 1; searchDepth <= MAX_DEPTH; searchDepth++) {
+                final int[] newInts =
+                        minimax(board, board.playerToMove == Board.PLAYER, 0, searchDepth, maxNanoTime, MIN_SCORE,
+                                MAX_SCORE);
+
+                if (newInts == null) break;
+
+                fieldIdxAndScore = newInts;
+
+                dbgPrinter.log("Search depth " + searchDepth + ": best move: " + fieldIdxAndScore[FIELD_IDX] +
+                        "; time remaining: " + (maxNanoTime - System.nanoTime()));
+            }
+
             dbgPrinter.log("Board cache size: " + calcCache.size());
+            assert fieldIdxAndScore != null;
             return fieldIdxAndScore[FIELD_IDX] < 0 ? null : moveConverter.toMove(fieldIdxAndScore[FIELD_IDX]);
         }
 
-        private int determineSearchDepth(Board board) {
-            if (timer.totalTime > (4E9 + 5E8)) {
-                return 2;
+        private int[] minimax(Board board, boolean isPlayer, final int level, int maxDepth, final long maxNanoTime, int alpha, int beta) {
+            if (level > 1 && System.nanoTime() >= maxNanoTime) {
+                return null;
             }
 
-            if (timer.totalTime > (4E9)) {
-                return 4;
-            }
-
-            if (timer.totalTime > (3E9 + 5E8)) {
-                return 6;
-            }
-
-            return 8;
-        }
-
-        private int[] minimax(Board board, int searchDepth, int level, boolean isPlayer, int alpha, int beta) {
             if (!calcCache.containsKey(board)) calcCache.put(board, new CalcResult());
             CalcResult calcResult = calcCache.get(board);
 
@@ -405,19 +388,20 @@ public final class SjoerdsGomokuPlayer {
                 calcResult.immediateWin = Arrays.mismatch(calcResult.match4[isPlayer ? PLAYER : OPPONENT], NIL_COUNTS);
 
             if (calcResult.immediateWin >= 0) {
-                final int[] ints = fieldIdxAndScore(calcResult.immediateWin, isPlayer ? MAX_SCORE : MIN_SCORE);
-                debugAnalyzer.setScore(ints[SCORE]);
-                return ints;
+                return fieldIdxAndScore(calcResult.immediateWin, isPlayer ? MAX_SCORE : MIN_SCORE);
             }
 
-            if (searchDepth <= 0) {
-                final int score = scoreBoard(isPlayer, board, calcResult);
-                debugAnalyzer.setScore(score);
-                return new int[]{-1, score};
+            if (!calcResult.hasOwnScore) {
+                calcResult.ownScore = scoreBoard(isPlayer, board, calcResult);
+                calcResult.hasOwnScore = true;
+            }
+
+            if (maxDepth <= 0) {
+                return new int[]{-1, calcResult.ownScore};
             }
 
             if (calcResult.moves == null) {
-                calcResult.moves = listTopMoves(isPlayer, board, calcResult, level);
+                calcResult.moves = listTopMoves(isPlayer, board, calcResult);
                 timer.generatedMoves += calcResult.moves.size();
             }
 
@@ -425,9 +409,11 @@ public final class SjoerdsGomokuPlayer {
             for (int move : calcResult.moves) {
                 final Board nextBoard = board.copy().apply(moveConverter.toMove(move));
 
-                debugAnalyzer.selectCurrentMove(move);
-                final int[] idxAndScore = minimax(nextBoard, searchDepth - 1, level + 1, !isPlayer, alpha, beta);
-                debugAnalyzer.levelUp();
+                final int[] idxAndScore = minimax(nextBoard, !isPlayer, level + 1, maxDepth - 1, maxNanoTime, alpha, beta);
+
+                if (idxAndScore == null) {
+                    return null;
+                }
 
                 if (isPlayer && idxAndScore[SCORE] > retval[SCORE]) {
                     retval[FIELD_IDX] = move;
@@ -444,18 +430,14 @@ public final class SjoerdsGomokuPlayer {
                 }
             }
 
-            debugAnalyzer.setScore(retval[SCORE]);
-            debugAnalyzer.setPreferredChild(retval[FIELD_IDX]);
-
             return retval;
         }
 
-        private List<Integer> listTopMoves(final boolean isPlayer, final Board board, final CalcResult calcResult, int level) {
+        private List<Integer> listTopMoves(final boolean isPlayer, final Board board, final CalcResult calcResult) {
             if (calcResult.match4 == null) calcResult.match4 = match(board, patterns.pat4);
 
             final int immediateLoss = Arrays.mismatch(calcResult.match4[isPlayer ? OPPONENT : PLAYER], NIL_COUNTS);
             if (immediateLoss >= 0) {
-                debugAnalyzer.addChildMove(immediateLoss, "IMM LOSS");
                 // We will need to do this move, no other will have to be searched at this level.
                 return Collections.singletonList(immediateLoss);
             }
@@ -524,10 +506,8 @@ public final class SjoerdsGomokuPlayer {
                     .limit(2);
 
             final List<Map.Entry<Integer, Integer>> genMoves = Stream.concat(strongMoves, weakMoves)
-                    .limit(3) // Unfortunately, not enough power
+                    //.limit(3) // Unfortunately, not enough power
                     .collect(Collectors.toList());
-
-            debugAnalyzer.addChildMoves(genMoves);
 
             if (genMoves.size() > 0) {
                 return genMoves.stream()
@@ -540,7 +520,6 @@ public final class SjoerdsGomokuPlayer {
             for (int i = 0; i < 256; i++) {
                 final Move move = moveConverter.toMove(i);
                 if (board.validMove(move)) {
-                    debugAnalyzer.addChildMove(i, "ANY MOVE");
                     return Collections.singletonList(i);
                 }
             }
@@ -801,6 +780,8 @@ public final class SjoerdsGomokuPlayer {
         byte[][] match1;
         int immediateWin = UNKNOWN;
         List<Integer> moves;
+        int ownScore;
+        boolean hasOwnScore;
     }
 
     static final class Patterns {

@@ -1,13 +1,11 @@
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.zip.DataFormatException;
 
 public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.IO IO = new SjoerdsGomokuPlayer.IO(null, null, System.err, false);
-    private static final DotGenerationAnalyzer GENERATION_ANALYZER = new DotGenerationAnalyzer();
 
-    public static void main(String[] args) throws IOException, DataFormatException {
+    public static void main(String[] args) throws DataFormatException {
         IO.dbgPrinter.printMoves = true;
         IO.dbgPrinter.printMove("Opening 1", "Hh", IO.moveConverter.toMove(119));
         IO.dbgPrinter.printMove("Opening 2", "Ii", IO.moveConverter.toMove(136));
@@ -39,7 +37,7 @@ public class SjoerdsGomokuPlayerTest {
     private static void testFinish4() throws DataFormatException {
         testMoveGen("Exploit open 3", "Ab", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
-        testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
+        testMoveGen("Block open 3", "Og", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
@@ -83,7 +81,8 @@ public class SjoerdsGomokuPlayerTest {
     private static void testMoveGen(final String desc, final String expectedMove,
             final SjoerdsGomokuPlayer.Board board) throws DataFormatException {
         final SjoerdsGomokuPlayer.MoveGenerator generator =
-                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer, GENERATION_ANALYZER);
+                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
+        IO.timer.totalTime = 0;
         IO.timer.generatedMoves = 0;
         IO.timer.boardsScored = 0;
 
@@ -131,9 +130,6 @@ public class SjoerdsGomokuPlayerTest {
 
     private static void expect(final SjoerdsGomokuPlayer.Board board, String expected, String actual, String desc) {
         if (!Objects.equals(expected, actual)) {
-            final String dot = GENERATION_ANALYZER.toString(IO.moveConverter);
-            System.out.println(dot);
-
             TestDumper.printBoard(board, expected, actual);
             throw new AssertionError("Test " + desc + " NOK: Got: " + actual + "; expected: " + expected);
         }
