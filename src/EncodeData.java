@@ -30,26 +30,51 @@ public class EncodeData {
         SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
         GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
 
-        System.out.println(
-                "@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.");
-        System.out.println("static final class Data {");
-        printData("PATTERNS", patternsBytes.length, patternsString);
-        printData("OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
-        System.out.println("}");
+        StringBuilder sb = new StringBuilder();
+        sb.append("@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.")
+                .append(System.lineSeparator())
+                .append("static final class Data {")
+                .append(System.lineSeparator());
+        printData(sb, "PATTERNS", patternsBytes.length, patternsString);
+        printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
+        sb.append("}")
+                .append(System.lineSeparator());
+
+        String s = sb.toString();
+        if (s.length() > 1_000_000) {
+            System.err.println("TOO BIG! " + s.length());
+        } else {
+            System.out.println(s);
+        }
     }
 
-    private static void printData(final String name, final int length, final String string) {
-        System.out.println("static final int " + name + "_UNCOMPRESSED_SIZE = " + length + ";");
-        System.out.println("static final String " + name + " = new StringBuilder()");
+    private static void printData(final StringBuilder sb, final String name, final int length, final String string) {
+        sb.append("static final int ")
+                .append(name)
+                .append("_UNCOMPRESSED_SIZE = ")
+                .append(length)
+                .append(";")
+                .append(System.lineSeparator())
+                .append("static final String ")
+                .append(name)
+                .append(" = new StringBuilder()")
+                .append(System.lineSeparator());
 
         String remaining = string;
         while (remaining.length() > MAX_SIZE_STRING_CONSTANT) {
-            System.out.println(".append(\"" + remaining.substring(0, MAX_SIZE_STRING_CONSTANT - 1) + "\")");
+            sb.append(".append(\"")
+                    .append(remaining.substring(0, MAX_SIZE_STRING_CONSTANT - 1))
+                    .append("\")")
+                    .append(System.lineSeparator());
             remaining = remaining.substring(MAX_SIZE_STRING_CONSTANT - 1);
         }
 
-        System.out.println(".append(\"" + remaining + "\")");
-        System.out.println(".toString();");
+        sb.append(".append(\"")
+                .append(remaining)
+                .append("\")")
+                .append(System.lineSeparator())
+                .append(".toString();")
+                .append(System.lineSeparator());
     }
 
     static String toUsableString(final byte[] bytes) {
