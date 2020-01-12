@@ -53,16 +53,17 @@ public class EncodeData {
     }
 
     static String toUsableString(final byte[] bytes) {
-        // Double compression shaves another 19-30% from final Base64 data.
+        // Double compression shaves another 30% from final Base64 data for patterns, and 5% for the opening book.
         byte[] compressed1 = compress(bytes);
         byte[] compressed2 = compress(compressed1);
-        byte[] base64_1 = base64(compressed1);
-        byte[] base64_2 = base64(compressed2);
-        String s1 = new String(base64_1, StandardCharsets.US_ASCII);
-        String s2 = new String(base64_2, StandardCharsets.US_ASCII);
+        byte[] base64 = base64(compressed2);
 
-        // TODO: Use the doubly compressed value
-        return s1;
+        if (compressed1.length > bytes.length) {
+            // Decompress will fail.
+            throw new AssertionError();
+        }
+
+        return new String(base64, StandardCharsets.US_ASCII);
     }
 
     private static byte[] base64(final byte[] bytes) {
@@ -142,7 +143,7 @@ public class EncodeData {
 
             throw new AssertionError("Verification failed: patterns not equal");
         } else {
-            System.out.println("Deserialized correctly");
+            System.out.println("Patterns deserialized correctly");
         }
     }
 }
