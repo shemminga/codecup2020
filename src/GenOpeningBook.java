@@ -17,7 +17,7 @@ public class GenOpeningBook {
         SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         moveGen.maxNanos *= 60 * 300;
-        moveGen.maxDepth = 6;
+        moveGen.maxDepth = 2;
 
         addOpening(moveGen, SjoerdsGomokuPlayer.Move.OPENING, SjoerdsGomokuPlayer.Board.PLAYER);
 
@@ -195,7 +195,6 @@ public class GenOpeningBook {
     private static void addCalcResult(final SjoerdsGomokuPlayer.CalcResult calcResult, final List<Integer> intList,
             final List<Byte> byteList) {
 
-        @SuppressWarnings("PointlessBitwiseExpression")
         byte bools = (byte) (//
                 setBit(0, calcResult.match4 != null) | //
                 setBit(1, calcResult.match3 != null) | //

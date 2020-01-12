@@ -80,7 +80,7 @@ public class SjoerdsGomokuPlayerTest {
 
     private static void testMoveGen(final String desc, final String expectedMove,
             final SjoerdsGomokuPlayer.Board board) throws DataFormatException {
-        final SjoerdsGomokuPlayer.MoveGenerator generator =
+        final SjoerdsGomokuPlayer.PatternMatchMoveGenerator generator =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         IO.timer.totalTime = 0;
         IO.timer.generatedMoves = 0;
