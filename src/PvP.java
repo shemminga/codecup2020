@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.zip.DataFormatException;
 
 public class PvP {
@@ -36,8 +35,8 @@ public class PvP {
         return () -> {
             try {
                 player.play();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            } catch (IOException | DataFormatException e) {
+                throw new RuntimeException(e);
             }
         };
     }

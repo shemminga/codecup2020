@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -6,14 +5,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 
 public class EncodeData {
     private static final int MAX_SIZE_STRING_CONSTANT = 65535;
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, DataFormatException {
+    public static void main(String[] args) throws DataFormatException {
         SjoerdsGomokuPlayer.Patterns patterns = GenPatterns.getPatterns();
         byte[] patternsBytes = serializePatterns(patterns);
         String patternsString = toUsableString(patternsBytes);
@@ -21,14 +22,24 @@ public class EncodeData {
         SjoerdsGomokuPlayer.Patterns verifyPatterns = SjoerdsGomokuPlayer.DataReader.deserializePatterns(patternsString, patternsBytes.length);
         verifyEquals(patterns, verifyPatterns);
 
+        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = GenOpeningBook.getOwnOpeningBook();
+        byte[] ownOpeningBookBytes = GenOpeningBook.serializeCalcCache(ownOpeningBook);
+        String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
+
+        final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
+        SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
+        GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
+
+        System.out.println(
+                "@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.");
         System.out.println("static final class Data {");
         printData("PATTERNS", patternsBytes.length, patternsString);
+        printData("OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
         System.out.println("}");
     }
 
     private static void printData(final String name, final int length, final String string) {
         System.out.println("static final int " + name + "_UNCOMPRESSED_SIZE = " + length + ";");
-        System.out.println("@SuppressWarnings(\"StringBufferReplaceableByString\") // It really can't be replaced by String.");
         System.out.println("static final String " + name + " = new StringBuilder()");
 
         String remaining = string;
@@ -41,10 +52,17 @@ public class EncodeData {
         System.out.println(".toString();");
     }
 
-    private static String toUsableString(final byte[] bytes) {
-        byte[] compressed = compress(bytes);
-        byte[] base64 = base64(compressed);
-        return new String(base64, StandardCharsets.US_ASCII);
+    static String toUsableString(final byte[] bytes) {
+        // Double compression shaves another 19-30% from final Base64 data.
+        byte[] compressed1 = compress(bytes);
+        byte[] compressed2 = compress(compressed1);
+        byte[] base64_1 = base64(compressed1);
+        byte[] base64_2 = base64(compressed2);
+        String s1 = new String(base64_1, StandardCharsets.US_ASCII);
+        String s2 = new String(base64_2, StandardCharsets.US_ASCII);
+
+        // TODO: Use the doubly compressed value
+        return s1;
     }
 
     private static byte[] base64(final byte[] bytes) {
