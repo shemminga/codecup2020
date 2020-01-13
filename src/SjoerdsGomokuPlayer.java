@@ -245,7 +245,6 @@ public final class SjoerdsGomokuPlayer {
         }
 
         private void endMove(Board board, boolean stopTimer) {
-            dbgPrinter.log(String.format("Generated moves: %d, boards scored: %d", generatedMoves, boardsScored));
             if (stopTimer) {
                 generatedMoves = 0;
                 boardsScored = 0;
@@ -282,8 +281,7 @@ public final class SjoerdsGomokuPlayer {
                 } else if (move == Move.SWITCH) {
                     log(type + " " + moveStr + " SWITCH");
                 } else {
-                    log(type + " " + moveStr + " " + Long.toHexString(move.move[0]) + " " + Long.toHexString(move.move[1]) +
-                            " " + Long.toHexString(move.move[2]) + " " + Long.toHexString(move.move[3]));
+                    log(type + " " + moveStr);
                 }
             }
         }
@@ -297,7 +295,7 @@ public final class SjoerdsGomokuPlayer {
         }
 
         private static String timeFmt(long nanos) {
-            return String.format("%10d ns (%6.5f s)", nanos, ((double) nanos) / 1E9D);
+            return String.format("%6.5f s", ((double) nanos) / 1E9D);
         }
     }
 
@@ -375,10 +373,9 @@ public final class SjoerdsGomokuPlayer {
 
                 fieldIdxAndScore = newInts;
 
-                dbgPrinter.log(
-                        "Search depth " + searchDepth + ": best move: " + fieldIdxAndScore[FIELD_IDX] + "; score: " +
-                                fieldIdxAndScore[SCORE] + "; time remaining: " + (maxNanoTime - System.nanoTime()) +
-                                "; calcCache size: " + calcCache.size());
+                dbgPrinter.log("Depth " + searchDepth + ": best mv: " + fieldIdxAndScore[FIELD_IDX] + "; score: " +
+                        fieldIdxAndScore[SCORE] + "; time left: " +
+                        DbgPrinter.timeFmt(maxNanoTime - System.nanoTime()) + "; cache: " + calcCache.size());
             }
 
             assert fieldIdxAndScore != null;
