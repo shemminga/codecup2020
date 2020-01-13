@@ -312,7 +312,12 @@ public final class SjoerdsGomokuPlayer {
         @SuppressWarnings("MismatchedReadAndWriteOfArray")
         private static final byte[] NIL_COUNTS = new byte[256];
 
-        private static final int MAX_MOVES = 125;
+        private static final int[] REMAINING_MOVES =
+                {32, 31, 30, 29, 28, 27, 26, 25, 26, 26, 26, 26, 25, 25, 25, 24, 23, 22, 23, 22, 22, 21, 21, 21, 21, 20,
+                        20, 20, 19, 21, 23, 24, 24, 25, 25, 27, 26, 26, 25, 27, 27, 26, 28, 27, 27, 30, 31, 30, 31, 30,
+                        29, 28, 27, 28, 27, 31, 30, 29, 31, 30, 29, 28, 27, 26, 25, 24, 26, 25, 24, 23, 22, 28, 27, 26,
+                        25, 24, 23, 22, 21, 20, 19, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 20, 19, 18, 17, 16, 15,
+                        21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 9, 8, 7, 6, 5, 4, 3, 2, 1};
 
         Map<Board, CalcResult> calcCache = new HashMap<>(100_000);
 
@@ -358,7 +363,7 @@ public final class SjoerdsGomokuPlayer {
             Arrays.fill(killerMoves[1], -1);
 
             final long remainingNanos = maxNanos - (timer.totalTime + now - timer.timerStart);
-            int remainingMoves = MAX_MOVES - board.moves;
+            int remainingMoves = board.moves >= REMAINING_MOVES.length ? 0 : REMAINING_MOVES[board.moves];
 
             long availableTime = (remainingNanos <= 0 || remainingMoves <= 0) ? 0 : remainingNanos / remainingMoves;
             final long maxNanoTime = now + availableTime;
