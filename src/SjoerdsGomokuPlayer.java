@@ -326,7 +326,7 @@ public final class SjoerdsGomokuPlayer {
         private final Timer timer;
         private final Patterns patterns = DataReader.getPatterns();
 
-        long maxNanos = 4 * 1_000_000_000L;
+        long maxNanos = 4_500_000_000L;
         int maxDepth = 16;
         int[][] killerMoves;
 
