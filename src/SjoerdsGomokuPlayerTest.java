@@ -37,25 +37,28 @@ public class SjoerdsGomokuPlayerTest {
     private static void testFinish4() throws DataFormatException {
         testMoveGen("Exploit open 3", "Ab", "Ac", "Ba", "Ad", "Bb", "Ae", "Bc");
         testMoveGen("Ignore enemy open 3", "Kg",  "Lg", "Lh", "Mg", "Mh", "Ng", "Nh");
-        testMoveGen("Block open 3", "Og", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
+        testMoveGen("Block open 3", "Kg", "Fo", "Lg", "Lh", "Mg", "Mh", "Ng");
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
-        testMoveGen("Block double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+        testMoveGen("Block double closed 3", "Dl", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 
     private static void testScenario1() throws DataFormatException {
         final SjoerdsGomokuPlayer.Board board = newBoard("Gh", "Jh", "Ji", "Kg", "Kh", "Mf", "Ki", "Mi", "Lg", "Lh",
                 "Li", "Lm");
-        testScenario("Scenario 1", true, board, "Hi", "Ii", "Ij", "Hk",
+        //testScenario("Scenario 1", true, board, "Hi", "Ii", "Ij", "Hk",
+        //        /* Finishing moves: */ "Fg", "Ef", "Jk");
+        testScenario("Scenario 1", true, board, "Ij", "Hk", "Hi", "Ii",
                 /* Finishing moves: */ "Fg", "Ef", "Jk");
     }
 
     private static void testScenario2() throws DataFormatException {
         final SjoerdsGomokuPlayer.Board board = newBoard("El", "Fk", "Ek", "Zz", "Ej", "Di", "Fj", "Gj", "Gk", "Fi",
                 "Ei", "Dh", "Eh", "Eg", "Dj", "Hl", "Fl", "Fm", "Ff", "Bj", "Gg", "Ck", "Hf", "Fh", "Gf");
-        testScenario("Scenario 2", false, board,"Ak");
+        //testScenario("Scenario 2", false, board,"Ak");
+        testScenario("Scenario 2", false, board, "Ci", "Ak", "Cj");
     }
 
     private static void testScenario(final String desc, final boolean blackStarts, final SjoerdsGomokuPlayer.Board board, final String... steps)

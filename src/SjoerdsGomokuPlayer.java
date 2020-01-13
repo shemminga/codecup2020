@@ -498,13 +498,13 @@ public final class SjoerdsGomokuPlayer {
                     continue;
                 }
 
-                if (calcResult.match2[onMove][i] >= 2) {
+                if (calcResult.match2[onMove][i] >= 4) {
                     // Maybe there's an opportunity to create 4 match3s
                     scores[i] = 1_300_000_000;
                     continue;
                 }
 
-                if (calcResult.match2[offMove][i] >= 2) {
+                if (calcResult.match2[offMove][i] >= 4) {
                     // Maybe there's an opportunity to create 4 match3s
                     scores[i] = 1_200_000_000;
                     continue;
@@ -568,30 +568,6 @@ public final class SjoerdsGomokuPlayer {
                     winCounts[offMove][4]++;
                 }
 
-                if (calcResult.match3[onMove][i] >= 2) {
-                    // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
-                    winCounts[onMove][3]++;
-                } else if (calcResult.match3[onMove][i] == 1 && calcResult.match2[onMove][i] >= 3) {
-                    // Create a 4 and an open 3.
-                    winCounts[onMove][2]++;
-                }
-
-                if (calcResult.match3[offMove][i] >= 2) {
-                    // Either open 3 or (less likely) almost overline: xooo..o. Open 3 is a win when playing.
-                    winCounts[offMove][3]++;
-                } else if (calcResult.match3[offMove][i] == 1 && calcResult.match2[offMove][i] >= 3) {
-                    // Create a 4 and an open 3.
-                    winCounts[offMove][2]++;
-                }
-
-                if (calcResult.match2[onMove][i] >= 4) {
-                    winCounts[onMove][2]++;
-                }
-
-                if (calcResult.match2[offMove][i] >= 4) {
-                    winCounts[offMove][2]++;
-                }
-
                 opportunityCounts[onMove][1] += calcResult.match1[onMove][i];
                 opportunityCounts[onMove][2] += calcResult.match2[onMove][i];
                 opportunityCounts[onMove][3] += calcResult.match3[onMove][i];
@@ -606,22 +582,6 @@ public final class SjoerdsGomokuPlayer {
             // Two immediate wins for the opponent. Can't block that.
             if (winCounts[offMove][4] >= 2) {
                 return playerToMoveFactor * MIN_SCORE;
-            }
-
-            if (winCounts[onMove][3] >= 1) {
-                return playerToMoveFactor * (MAX_SCORE - 1 - UNCERTAINTY);
-            }
-
-            if (winCounts[offMove][3] >= 2) {
-                return playerToMoveFactor * (MIN_SCORE + 1 + UNCERTAINTY);
-            }
-
-            if (winCounts[onMove][2] >= 1) {
-                return playerToMoveFactor * (MAX_SCORE - 1 - 2*UNCERTAINTY);
-            }
-
-            if (winCounts[offMove][2] >= 2) {
-                return playerToMoveFactor * (MIN_SCORE + 1 + 2*UNCERTAINTY);
             }
 
             return (opportunityCounts[onMove][4] - Math.max(opportunityCounts[offMove][4] - 1, 0)) * 100_000 +
