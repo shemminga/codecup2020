@@ -594,7 +594,7 @@ public final class SjoerdsGomokuPlayer {
                 if ((bestScore & 1) == 0) { // Even scores are for onMove
                     calcResult.ownScore = playerToMoveFactor * bestScore * 1_000_000;
                 } else {
-                    calcResult.ownScore = playerToMoveFactor * (bestScore + 1) * -1_000_000;
+                    calcResult.ownScore = playerToMoveFactor * bestScore * -1_000_000;
                 }
             } else {
                 calcResult.ownScore *= playerToMoveFactor;
