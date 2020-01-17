@@ -5,7 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 
@@ -20,13 +22,13 @@ public class EncodeData {
         SjoerdsGomokuPlayer.Patterns verifyPatterns = SjoerdsGomokuPlayer.DataReader.deserializePatterns(patternsString, patternsBytes.length);
         verifyEquals(patterns, verifyPatterns);
 
-        //Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = GenOpeningBook.getOwnOpeningBook();
-        //byte[] ownOpeningBookBytes = GenOpeningBook.serializeCalcCache(ownOpeningBook);
-        //String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
-        //
-        //final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
-        ////SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
-        //GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
+        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = GenOpeningBook.getOwnOpeningBook();
+        byte[] ownOpeningBookBytes = GenOpeningBook.serializeCalcCache(ownOpeningBook);
+        String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
+
+        final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
+        SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
+        GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
 
         StringBuilder sb = new StringBuilder();
         sb.append("@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.")
@@ -34,13 +36,14 @@ public class EncodeData {
                 .append("static final class Data {")
                 .append(System.lineSeparator());
         printData(sb, "PATTERNS", patternsBytes.length, patternsString);
-        //printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
+        printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
         sb.append("}")
                 .append(System.lineSeparator());
 
         String s = sb.toString();
+        System.out.println("Length: " + s.length());
         if (s.length() > 1_000_000) {
-            System.err.println("TOO BIG! " + s.length());
+            System.err.println("TOO BIG!");
         } else {
             System.out.println(s);
         }
