@@ -5,9 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 
@@ -22,13 +20,13 @@ public class EncodeData {
         SjoerdsGomokuPlayer.Patterns verifyPatterns = SjoerdsGomokuPlayer.DataReader.deserializePatterns(patternsString, patternsBytes.length);
         verifyEquals(patterns, verifyPatterns);
 
-        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = GenOpeningBook.getOwnOpeningBook();
-        byte[] ownOpeningBookBytes = GenOpeningBook.serializeCalcCache(ownOpeningBook);
-        String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
-
-        final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
-        SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
-        GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
+        //Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = GenOpeningBook.getOwnOpeningBook();
+        //byte[] ownOpeningBookBytes = GenOpeningBook.serializeCalcCache(ownOpeningBook);
+        //String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
+        //
+        //final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
+        ////SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
+        //GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
 
         StringBuilder sb = new StringBuilder();
         sb.append("@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.")
@@ -36,7 +34,7 @@ public class EncodeData {
                 .append("static final class Data {")
                 .append(System.lineSeparator());
         printData(sb, "PATTERNS", patternsBytes.length, patternsString);
-        printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
+        //printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
         sb.append("}")
                 .append(System.lineSeparator());
 
@@ -108,20 +106,16 @@ public class EncodeData {
     }
 
     private static byte[] serializePatterns(final SjoerdsGomokuPlayer.Patterns patterns) {
-        final int totalCount =
-                patterns.pat1.length + patterns.pat2.length + patterns.pat3.length + patterns.pat4.length;
-        LongBuffer longBuffer = LongBuffer.allocate(totalCount * 8);
+        List<Long> longList = new ArrayList<>();
         List<Integer> intList = new ArrayList<>();
 
-        intList.add(patterns.pat1.length);
-        intList.add(patterns.pat2.length);
-        intList.add(patterns.pat3.length);
-        intList.add(patterns.pat4.length);
+        intList.add(patterns.allPatterns.length);
+        addPatterns(patterns.allPatterns, longList, intList);
 
-        addPatterns(patterns.pat1, longBuffer, intList);
-        addPatterns(patterns.pat2, longBuffer, intList);
-        addPatterns(patterns.pat3, longBuffer, intList);
-        addPatterns(patterns.pat4, longBuffer, intList);
+        final LongBuffer longBuffer = LongBuffer.allocate(longList.size());
+        for (Long l : longList) {
+            longBuffer.put(l);
+        }
 
         final IntBuffer intBuffer = IntBuffer.allocate(intList.size());
         for (Integer i : intList) {
@@ -141,30 +135,25 @@ public class EncodeData {
         return byteBuffer.array();
     }
 
-    private static void addPatterns(final SjoerdsGomokuPlayer.Pattern[] pat, final LongBuffer longBuffer,
+    private static void addPatterns(final SjoerdsGomokuPlayer.Pattern[] pat, final List<Long> longList,
             final List<Integer> intList) {
         for (SjoerdsGomokuPlayer.Pattern p : pat) {
-            longBuffer.put(p.emptyFields);
-            longBuffer.put(p.playerStones);
-            intList.add(p.fieldIdxs.length);
-            for (int fieldIdx : p.fieldIdxs) {
+            for (long eF : p.emptyFields)
+                longList.add(eF);
+            for (long pS : p.playerStones)
+                longList.add(pS);
+            intList.add(p.moves.length);
+            for (int fieldIdx : p.moves)
                 intList.add(fieldIdx);
-            }
+            for (int type : p.moveTypes)
+                intList.add(type);
         }
     }
 
     private static void verifyEquals(SjoerdsGomokuPlayer.Patterns p1, SjoerdsGomokuPlayer.Patterns p2) {
-        boolean equal =
-                        Arrays.equals(p1.pat1, p2.pat1) &&
-                        Arrays.equals(p1.pat2, p2.pat2) &&
-                        Arrays.equals(p1.pat3, p2.pat3) &&
-                        Arrays.equals(p1.pat4, p2.pat4);
-
-        if (!equal) {
-            System.err.printf("pat1 mismatch: %d (len %d %d)\n", Arrays.mismatch(p1.pat1, p2.pat1), p1.pat1.length, p2.pat1.length);
-            System.err.printf("pat2 mismatch: %d (len %d %d)\n", Arrays.mismatch(p1.pat2, p2.pat2), p1.pat2.length, p2.pat2.length);
-            System.err.printf("pat3 mismatch: %d (len %d %d)\n", Arrays.mismatch(p1.pat3, p2.pat3), p1.pat3.length, p2.pat3.length);
-            System.err.printf("pat4 mismatch: %d (len %d %d)\n", Arrays.mismatch(p1.pat4, p2.pat4), p1.pat4.length, p2.pat4.length);
+        if (!Arrays.equals(p1.allPatterns, p2.allPatterns)) {
+            System.err.printf("allPatterns mismatch: %d (len %d %d)\n", Arrays.mismatch(p1.allPatterns, p2.allPatterns),
+                    p1.allPatterns.length, p2.allPatterns.length);
 
             throw new AssertionError("Verification failed: patterns not equal");
         } else {

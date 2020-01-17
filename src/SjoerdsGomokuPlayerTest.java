@@ -21,11 +21,17 @@ public class SjoerdsGomokuPlayerTest {
     }
 
     private static void testMoves() throws DataFormatException {
+        testOpening();
+
         testFinish5();
         testFinish4();
 
         testScenario1();
         testScenario2();
+    }
+
+    private static void testOpening() throws DataFormatException {
+        testMoveGen("Opening", "Ih", "Hh", "Ii", "Kh");
     }
 
     private static void testFinish5() throws DataFormatException {
@@ -41,7 +47,7 @@ public class SjoerdsGomokuPlayerTest {
 
         testMoveGen("Exploit double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp", "Ii");
-        testMoveGen("Block double closed 3", "Dl", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
+        testMoveGen("Block double closed 3", "Dm", "Am", "Pp", "Bm", "Jg", "Cm", "Ap",
                 "Dn", "Aa", "Do", "Pa", "Dp");
     }
 

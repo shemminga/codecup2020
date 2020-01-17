@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.zip.DataFormatException;
 
 public class GenOpeningBook {
@@ -30,39 +29,39 @@ public class GenOpeningBook {
         System.out.println("cachePlayer.size() = " + cachePlayer.size());
         System.out.println("cacheOpponent.size() = " + cacheOpponent.size());
 
-        cacheOpponent.forEach((board, calcResult) -> {
-            SjoerdsGomokuPlayer.Board flip = board.copy().flip();
-
-            if (!cachePlayer.containsKey(flip)) {
-                byte[] swap;
-
-                if (calcResult.match4 != null) {
-                    swap = calcResult.match4[0];
-                    calcResult.match4[0] = calcResult.match4[1];
-                    calcResult.match4[1] = swap;
-                }
-
-                if (calcResult.match3 != null) {
-                    swap = calcResult.match3[0];
-                    calcResult.match3[0] = calcResult.match3[1];
-                    calcResult.match3[1] = swap;
-                }
-
-                if (calcResult.match2 != null) {
-                    swap = calcResult.match2[0];
-                    calcResult.match2[0] = calcResult.match2[1];
-                    calcResult.match2[1] = swap;
-                }
-
-                if (calcResult.match1 != null) {
-                    swap = calcResult.match1[0];
-                    calcResult.match1[0] = calcResult.match1[1];
-                    calcResult.match1[1] = swap;
-                }
-
-                cachePlayer.put(flip, calcResult);
-            }
-        });
+        //cacheOpponent.forEach((board, calcResult) -> {
+        //    SjoerdsGomokuPlayer.Board flip = board.copy().flip();
+        //
+        //    if (!cachePlayer.containsKey(flip)) {
+        //        byte[] swap;
+        //
+        //        if (calcResult.match4 != null) {
+        //            swap = calcResult.match4[0];
+        //            calcResult.match4[0] = calcResult.match4[1];
+        //            calcResult.match4[1] = swap;
+        //        }
+        //
+        //        if (calcResult.match3 != null) {
+        //            swap = calcResult.match3[0];
+        //            calcResult.match3[0] = calcResult.match3[1];
+        //            calcResult.match3[1] = swap;
+        //        }
+        //
+        //        if (calcResult.match2 != null) {
+        //            swap = calcResult.match2[0];
+        //            calcResult.match2[0] = calcResult.match2[1];
+        //            calcResult.match2[1] = swap;
+        //        }
+        //
+        //        if (calcResult.match1 != null) {
+        //            swap = calcResult.match1[0];
+        //            calcResult.match1[0] = calcResult.match1[1];
+        //            calcResult.match1[1] = swap;
+        //        }
+        //
+        //        cachePlayer.put(flip, calcResult);
+        //    }
+        //});
 
         System.out.println("Final calcCache size " + cachePlayer.size());
 
@@ -76,28 +75,28 @@ public class GenOpeningBook {
             throw new AssertionError("Verification failed: caches of unequal size");
         }
 
-        original.forEach((board, calcResult) -> {
-            SjoerdsGomokuPlayer.CalcResult deserCR = deserialized.get(board);
-
-            boolean equal = Objects.equals(calcResult.moves, deserCR.moves) &&
-                    verifyMatches(calcResult.match4, deserCR.match4) && //
-                    verifyMatches(calcResult.match3, deserCR.match3) && //
-                    verifyMatches(calcResult.match2, deserCR.match2) && //
-                    verifyMatches(calcResult.match1, deserCR.match1);
-
-            if (!equal) {
-                printVerifyDifference("match4", calcResult.match4, deserCR.match4);
-                printVerifyDifference("match3", calcResult.match3, deserCR.match3);
-                printVerifyDifference("match2", calcResult.match2, deserCR.match2);
-                printVerifyDifference("match1", calcResult.match1, deserCR.match1);
-
-                Object[] moves1 = calcResult.moves == null ? null : calcResult.moves.toArray();
-                Object[] moves2 = deserCR.moves == null ? null : deserCR.moves.toArray();
-                printVerifyDifference("moves", moves1, moves2);
-
-                throw new AssertionError("Verification failed: patterns not equal");
-            }
-        });
+        //original.forEach((board, calcResult) -> {
+        //    SjoerdsGomokuPlayer.CalcResult deserCR = deserialized.get(board);
+        //
+        //    boolean equal = Objects.equals(calcResult.moves, deserCR.moves) &&
+        //            verifyMatches(calcResult.match4, deserCR.match4) && //
+        //            verifyMatches(calcResult.match3, deserCR.match3) && //
+        //            verifyMatches(calcResult.match2, deserCR.match2) && //
+        //            verifyMatches(calcResult.match1, deserCR.match1);
+        //
+        //    if (!equal) {
+        //        printVerifyDifference("match4", calcResult.match4, deserCR.match4);
+        //        printVerifyDifference("match3", calcResult.match3, deserCR.match3);
+        //        printVerifyDifference("match2", calcResult.match2, deserCR.match2);
+        //        printVerifyDifference("match1", calcResult.match1, deserCR.match1);
+        //
+        //        Object[] moves1 = calcResult.moves == null ? null : calcResult.moves.toArray();
+        //        Object[] moves2 = deserCR.moves == null ? null : deserCR.moves.toArray();
+        //        printVerifyDifference("moves", moves1, moves2);
+        //
+        //        throw new AssertionError("Verification failed: patterns not equal");
+        //    }
+        //});
 
         System.out.println("Deserialized correctly");
     }
@@ -195,39 +194,39 @@ public class GenOpeningBook {
     private static void addCalcResult(final SjoerdsGomokuPlayer.CalcResult calcResult, final List<Integer> intList,
             final List<Byte> byteList) {
 
-        byte bools = (byte) (//
-                setBit(0, calcResult.match4 != null) | //
-                setBit(1, calcResult.match3 != null) | //
-                setBit(2, calcResult.match2 != null) | //
-                setBit(3, calcResult.match1 != null) | //
-                setBit(4, calcResult.moves != null));
-
-        byteList.add(bools);
-
-        for (int onMove = 0; onMove <= 1; onMove++)
-            for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
-                if (calcResult.match4 != null)
-                    byteList.add(calcResult.match4[onMove][fieldIdx]);
-
-        for (int onMove = 0; onMove <= 1; onMove++)
-            for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
-                if (calcResult.match3 != null)
-                    byteList.add(calcResult.match3[onMove][fieldIdx]);
-
-        for (int onMove = 0; onMove <= 1; onMove++)
-            for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
-                if (calcResult.match2 != null)
-                    byteList.add(calcResult.match2[onMove][fieldIdx]);
-
-        for (int onMove = 0; onMove <= 1; onMove++)
-            for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
-                if (calcResult.match1 != null)
-                    byteList.add(calcResult.match1[onMove][fieldIdx]);
-
-        if (calcResult.moves != null) {
-            intList.add(calcResult.moves.size());
-            intList.addAll(calcResult.moves);
-        }
+        //byte bools = (byte) (//
+        //        setBit(0, calcResult.match4 != null) | //
+        //        setBit(1, calcResult.match3 != null) | //
+        //        setBit(2, calcResult.match2 != null) | //
+        //        setBit(3, calcResult.match1 != null) | //
+        //        setBit(4, calcResult.moves != null));
+        //
+        //byteList.add(bools);
+        //
+        //for (int onMove = 0; onMove <= 1; onMove++)
+        //    for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
+        //        if (calcResult.match4 != null)
+        //            byteList.add(calcResult.match4[onMove][fieldIdx]);
+        //
+        //for (int onMove = 0; onMove <= 1; onMove++)
+        //    for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
+        //        if (calcResult.match3 != null)
+        //            byteList.add(calcResult.match3[onMove][fieldIdx]);
+        //
+        //for (int onMove = 0; onMove <= 1; onMove++)
+        //    for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
+        //        if (calcResult.match2 != null)
+        //            byteList.add(calcResult.match2[onMove][fieldIdx]);
+        //
+        //for (int onMove = 0; onMove <= 1; onMove++)
+        //    for (int fieldIdx = 0; fieldIdx < 256; fieldIdx++)
+        //        if (calcResult.match1 != null)
+        //            byteList.add(calcResult.match1[onMove][fieldIdx]);
+        //
+        //if (calcResult.moves != null) {
+        //    intList.add(calcResult.moves.size());
+        //    intList.addAll(calcResult.moves);
+        //}
     }
 
     private static byte setBit(final int bit, final boolean bool) {
