@@ -6,18 +6,22 @@ public class SjoerdsGomokuPlayerTest {
     private static final SjoerdsGomokuPlayer.IO IO = new SjoerdsGomokuPlayer.IO(null, null, System.err, false);
 
     public static void main(String[] args) throws DataFormatException {
-        IO.dbgPrinter.printMoves = true;
-        IO.dbgPrinter.printMove("Opening 1", "Hh", IO.moveConverter.toMove(119));
-        IO.dbgPrinter.printMove("Opening 2", "Ii", IO.moveConverter.toMove(136));
-        IO.dbgPrinter.printMove("Opening 3", "Kh", IO.moveConverter.toMove(167));
-        IO.dbgPrinter.printMoves = false;
-        // Warm-up loading patterns and such
-        //MOVE_GENERATOR.generateMove(newBoard("Aa", "Pp", "Bb", "Oo", "Cc", "Nn", "Dd", "Mm"));
+        SjoerdsGomokuPlayer.Move move1 = IO.moveConverter.toMove(120);
+        SjoerdsGomokuPlayer.Move move2 = IO.moveConverter.toMove(151);
+        SjoerdsGomokuPlayer.Move move3 = IO.moveConverter.toMove(168);
 
-        //System.out.println("Waiting for enter");
-        //System.in.read();
+        toHex(move1);
+        toHex(move2);
+        toHex(move3);
 
         testMoves();
+    }
+
+    private static void toHex(final SjoerdsGomokuPlayer.Move move) {
+        for (int i = 0; i < 4; i++) {
+            System.out.print("0x" + Long.toHexString(move.move[i]) + ", ");
+        }
+        System.out.println();
     }
 
     private static void testMoves() throws DataFormatException {

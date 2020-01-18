@@ -60,7 +60,7 @@ public class GenOpeningBook {
         SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         moveGen.maxNanos *= 60 * 300;
-        moveGen.maxDepth = 9;
+        moveGen.maxDepth = 8;
 
         addOpening(moveGen, SjoerdsGomokuPlayer.Move.OPENING, SjoerdsGomokuPlayer.Board.PLAYER);
 
