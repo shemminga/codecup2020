@@ -13,7 +13,47 @@ public class GenOpeningBook {
             new SjoerdsGomokuPlayer.IO(System.in, System.out, System.err, false);
 
     public static void main(String[] args) throws DataFormatException {
-        getOwnOpeningBook();
+        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> ownOpeningBook = getOwnOpeningBook();
+        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> otherOpeningBooks = getOtherOpeningBooks();
+
+        System.out.println("ownOpeningBook.size() = " + ownOpeningBook.size());
+        System.out.println("otherOpeningBooks.size() = " + otherOpeningBooks.size());
+    }
+
+    static Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> getOtherOpeningBooks() throws DataFormatException {
+        SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
+                new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
+        moveGen.maxNanos *= 60 * 300;
+        moveGen.maxDepth = 6;
+
+        List<SjoerdsGomokuPlayer.Move[]> openings =
+                List.of(toOpening("Ig", "He", "Id"), toOpening("Hh", "Ih", "Hk"), toOpening("Hh", "Hi", "Ii"),
+                        toOpening("Oh", "Lh", "Lg"), toOpening("Kj", "Li", "Jg"), toOpening("Aa", "Pp", "Ap"),
+                        toOpening("Cc", "Cd", "Ce"), toOpening("Ae", "Be", "Ad"));
+
+        openings.forEach(opening -> {
+            IO.timer.totalTime = 0;
+            IO.timer.timerStart = System.nanoTime();
+
+            SjoerdsGomokuPlayer.Board board = new SjoerdsGomokuPlayer.Board();
+            board.apply(opening[0]);
+            board.apply(opening[1]);
+            board.apply(opening[2]);
+            SjoerdsGomokuPlayer.Move move = moveGen.decideSwitch(board);
+        });
+
+        return moveGen.calcCache;
+    }
+
+    static SjoerdsGomokuPlayer.Move[] toOpening(String move1, String move2, String move3) {
+        return new SjoerdsGomokuPlayer.Move[]{toMove(move1), toMove(move2), toMove(move3)};
+    }
+
+    static SjoerdsGomokuPlayer.Move toMove(String move) {
+        int row = move.charAt(0) - 'A';
+        int col = move.charAt(1) - 'a';
+        int fieldIdx = SjoerdsGomokuPlayer.MoveConverter.toFieldIdx(row, col);
+        return IO.moveConverter.toMove(fieldIdx);
     }
 
     static Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> getOwnOpeningBook() throws DataFormatException {

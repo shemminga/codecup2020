@@ -27,8 +27,17 @@ public class EncodeData {
         String ownOpeningBookString = toUsableString(ownOpeningBookBytes);
 
         final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOwnOpeningBook = new HashMap<>();
-        SjoerdsGomokuPlayer.DataReader.loadOwnOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
+        SjoerdsGomokuPlayer.DataReader.loadOpeningBook(verifyOwnOpeningBook, false, ownOpeningBookString, ownOpeningBookBytes.length);
         GenOpeningBook.verifyEquals(ownOpeningBook, verifyOwnOpeningBook);
+
+        Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> otherOpeningBooks =
+                GenOpeningBook.getOtherOpeningBooks();
+        byte[] otherOpeningBooksBytes = GenOpeningBook.serializeCalcCache(otherOpeningBooks);
+        String otherOpeningBooksString = toUsableString(otherOpeningBooksBytes);
+        final Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> verifyOtherOpeningBooks = new HashMap<>();
+        SjoerdsGomokuPlayer.DataReader.loadOpeningBook(verifyOtherOpeningBooks, false, otherOpeningBooksString,
+                otherOpeningBooksBytes.length);
+        GenOpeningBook.verifyEquals(otherOpeningBooks, verifyOtherOpeningBooks);
 
         StringBuilder sb = new StringBuilder();
         sb.append("@SuppressWarnings(\"StringBufferReplaceableByString\") // They really can't be replaced by Strings.")
@@ -37,12 +46,13 @@ public class EncodeData {
                 .append(System.lineSeparator());
         printData(sb, "PATTERNS", patternsBytes.length, patternsString);
         printData(sb, "OWN_OPENING_BOOK", ownOpeningBookBytes.length, ownOpeningBookString);
+        printData(sb, "OTHER_OPENING_BOOKS", otherOpeningBooksBytes.length, otherOpeningBooksString);
         sb.append("}")
                 .append(System.lineSeparator());
 
         String s = sb.toString();
         System.out.println("Length: " + s.length());
-        if (s.length() > 1_000_000) {
+        if (s.length() > 1_400_000) {
             System.err.println("TOO BIG!");
         } else {
             System.out.println(s);
