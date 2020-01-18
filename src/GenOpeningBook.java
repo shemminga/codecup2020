@@ -12,11 +12,15 @@ public class GenOpeningBook {
     private static final SjoerdsGomokuPlayer.IO IO =
             new SjoerdsGomokuPlayer.IO(System.in, System.out, System.err, false);
 
+    public static void main(String[] args) throws DataFormatException {
+        getOwnOpeningBook();
+    }
+
     static Map<SjoerdsGomokuPlayer.Board, SjoerdsGomokuPlayer.CalcResult> getOwnOpeningBook() throws DataFormatException {
         SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         moveGen.maxNanos *= 60 * 300;
-        moveGen.maxDepth = 3;
+        moveGen.maxDepth = 9;
 
         addOpening(moveGen, SjoerdsGomokuPlayer.Move.OPENING, SjoerdsGomokuPlayer.Board.PLAYER);
 
