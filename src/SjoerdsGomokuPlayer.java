@@ -30,7 +30,10 @@ public final class SjoerdsGomokuPlayer {
     }
 
     void play() throws IOException, DataFormatException {
-        boolean mustTryLoadCache = true;
+        // Preload cache
+        DataReader.loadOwnOpeningBookStraight(moveGenerator.calcCache);
+        DataReader.loadOwnOpeningBookSwitch(moveGenerator.calcCache);
+        DataReader.loadOtherOpeningBooks(moveGenerator.calcCache);
 
         final Board board = new Board();
 
@@ -50,9 +53,6 @@ public final class SjoerdsGomokuPlayer {
                 applyMove(board, move);
             }
 
-            DataReader.loadOtherOpeningBooks(moveGenerator.calcCache);
-            mustTryLoadCache = false;
-
             final Move move = moveGenerator.decideSwitch(board);
             applyMove(board, move);
             io.outputMove(move, board, true);
@@ -63,12 +63,6 @@ public final class SjoerdsGomokuPlayer {
             if (move == Move.QUIT) {
                 io.timer.endMove(board, true);
                 return;
-            }
-
-            if (mustTryLoadCache) {
-                if (move == Move.SWITCH) DataReader.loadOwnOpeningBookSwitch(moveGenerator.calcCache);
-                else DataReader.loadOwnOpeningBookStraight(moveGenerator.calcCache);
-                mustTryLoadCache = false;
             }
 
             applyMove(board, move);
