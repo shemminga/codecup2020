@@ -24,7 +24,8 @@ public class GenOpeningBook {
         SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         moveGen.maxNanos *= 60 * 300;
-        moveGen.maxDepth = 6;
+        moveGen.maxDepth = 4;
+        moveGen.searchWidth = 10;
 
         List<SjoerdsGomokuPlayer.Move[]> openings =
                 List.of(toOpening("Ig", "He", "Id"), toOpening("Hh", "Ih", "Hk"), toOpening("Hh", "Hi", "Ii"),
@@ -61,7 +62,8 @@ public class GenOpeningBook {
         SjoerdsGomokuPlayer.PatternMatchMoveGenerator moveGen =
                 new SjoerdsGomokuPlayer.PatternMatchMoveGenerator(IO.moveConverter, IO.dbgPrinter, IO.timer);
         moveGen.maxNanos *= 60 * 300;
-        moveGen.maxDepth = 8;
+        moveGen.maxDepth = 6;
+        moveGen.searchWidth = 15;
 
         addOpening(moveGen, SjoerdsGomokuPlayer.Move.OPENING, SjoerdsGomokuPlayer.Board.PLAYER);
 
