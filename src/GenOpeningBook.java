@@ -29,7 +29,8 @@ public class GenOpeningBook {
         List<SjoerdsGomokuPlayer.Move[]> openings =
                 List.of(toOpening("Ig", "He", "Id"), toOpening("Hh", "Ih", "Hk"), toOpening("Hh", "Hi", "Ii"),
                         toOpening("Oh", "Lh", "Lg"), toOpening("Kj", "Li", "Jg"), toOpening("Aa", "Pp", "Ap"),
-                        toOpening("Cc", "Cd", "Ce"), toOpening("Ae", "Be", "Ad"));
+                        toOpening("Cc", "Cd", "Ce"), toOpening("Ae", "Be", "Ad"), toOpening("Dg", "Dh", "Ek"),
+                        toOpening("Ge", "Ig", "Il"));
 
         openings.forEach(opening -> {
             IO.timer.totalTime = 0;
